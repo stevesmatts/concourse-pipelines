@@ -48,4 +48,7 @@ jobs:
         path: pipelines/scripts/rename-release.sh
         args: [mattermost-boshrelease]
   - put: transfer-releases
-    params: {"sync_dir" : "release" }
+    params: {
+      "sync_dir" : "release",
+      "rsync_opts" : ["-Pav", "--ignore-existing"]
+    }
