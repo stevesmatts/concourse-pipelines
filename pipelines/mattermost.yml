@@ -12,7 +12,7 @@ resources:
   source:
     uri: https://github.com/stevesmatts/concourse-pipelines.git
     branch: master
-- name: mattermost-release
+- name: mattermost-boshrelease
   type: bosh-io-release
   source:
     repository: cloudfoundry-community/mattermost-boshrelease
@@ -30,7 +30,7 @@ jobs:
   public: true
   plan:
   - get: pipelines
-  - get: mattermost-release
+  - get: mattermost-boshrelease
     trigger: true
   - task: fetch-mattermost
     config:
@@ -40,7 +40,7 @@ jobs:
         source: {repository: ubuntu}
       inputs:
       - name: pipelines
-      - name: mattermost-release
+      - name: mattermost-boshrelease
         path: incoming-release
       outputs:
       - name: release
