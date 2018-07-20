@@ -1,0 +1,97 @@
+---
+resource_types:
+- name: rsync-resource
+  type: docker-image
+  source:
+    repository: mrsixw/concourse-rsync-resource
+    tag: latest
+
+resources:
+- name: pipelines
+  type: git
+  source:
+    uri: https://github.com/stevesmatts/concourse-pipelines.git
+    branch: master
+- name: cf-rabbitmq-release
+  type: bosh-io-release
+  source:
+    repository: pivotal-cf/cf-rabbitmq-release
+- name: cf-rabbitmq-multitenant-broker-release
+  type: bosh-io-release
+  source:
+    repository: pivotal-cf/cf-rabbitmq-multitenant-broker-release
+- name: cf-cli-release
+  type: bosh-io-release
+  source:
+    repository: bosh-packages/cf-cli-release
+- name: transfer-releases
+  type: rsync-resource
+  source:
+    server: ((rsync_server))
+    base_dir: ((rsync_base))
+    user : ((rsync_user))
+    private_key: ((rsync_key))
+    disable_version_path: true
+
+jobs:
+- name: fetch-rabbitmq
+  public: true
+  plan:
+  - get: pipelines
+  - get: cf-rabbitmq-release
+    trigger: true
+  - get: cf-rabbitmq-multitenant-broker-release
+    trigger: true
+  - get: cf-cli-release
+    trigger: true
+  - task: fetch-rabbitmq
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: ubuntu}
+      inputs:
+      - name: pipelines
+      - name: cf-rabbitmq-release
+        path: incoming-release
+      outputs:
+      - name: release
+      run:
+        path: pipelines/scripts/rename-release.sh
+        args: [cf-rabbitmq-release]
+  - put: transfer-releases
+    params: {"sync_dir" : "release" }
+  - task: fetch-rabbitmq-broker
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: ubuntu}
+      inputs:
+      - name: pipelines
+      - name: cf-rabbitmq-multitenant-broker-release
+        path: incoming-release
+      outputs:
+      - name: release
+      run:
+        path: pipelines/scripts/rename-release.sh
+        args: [cf-rabbitmq-multitenant-broker-release]
+  - put: transfer-releases
+    params: {"sync_dir" : "release" }
+  - task: fetch-cf-cli
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: ubuntu}
+      inputs:
+      - name: pipelines
+      - name: cf-cli-release
+        path: incoming-release
+      outputs:
+      - name: release
+      run:
+        path: pipelines/scripts/rename-release.sh
+        args: [cf-cli-release]
+  - put: transfer-releases
+    params: {"sync_dir" : "release" }
