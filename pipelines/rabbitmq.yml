@@ -28,7 +28,7 @@ resources:
   type: rsync-resource
   source:
     server: ((rsync_server))
-    base_dir: ((rsync_base))
+    base_dir: /data/repo/bosh_io
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
@@ -102,5 +102,6 @@ jobs:
   - put: transfer-releases
     params: {
       "sync_dir" : "release",
+      "rsync_base" : "/data/repo/bosh_io",
       "rsync_opts" : ["-Pav", "--ignore-existing"]
     }
