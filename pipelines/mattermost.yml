@@ -16,14 +16,6 @@ resources:
   type: bosh-io-release
   source:
     repository: cloudfoundry-community/mattermost-boshrelease
-- name: transfer-releases
-  type: rsync-resource
-  source:
-    server: ((rsync_server))
-    base_dir: ((rsync_base))
-    user : ((rsync_user))
-    private_key: ((rsync_key))
-    disable_version_path: true
 
 jobs:
 - name: fetch-mattermost
@@ -42,13 +34,8 @@ jobs:
       - name: pipelines
       - name: mattermost-boshrelease
         path: incoming-release
-      outputs:
-      - name: release
       run:
-        path: pipelines/scripts/rename-release.sh
-        args: [mattermost-boshrelease]
-  - put: transfer-releases
-    params: {
-      "sync_dir" : "release",
-      "rsync_opts" : ["-Pav", "--ignore-existing"]
-    }
+        path: pipelines/scripts/output-bosh-io-release.sh
+        args:
+        - mattermost-boshrelease
+        - 'bosh_io'
