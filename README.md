@@ -2,9 +2,16 @@
 
 ## Pipelines
 
-- pipelines/mattermost.yml: Pulls the following bosh.io artifacts:
-  - mattermost
-- pipelines/rabbitmq.yml: Pulls the following bosh.io artifacts:
-  - rabbitmq
-  - rabbitmq-broker
-  - cf-cli
+### Mattermost
+
+`fly -t mirror set-pipeline --pipeline mattermost --config pipelines/mattermost.yml --load-vars-from pipelines/credentials.yml`
+
+- mattermost
+
+### RabbitMQ
+
+`fly -t mirror set-pipeline --pipeline rabbitmq --config pipelines/rabbitmq.yml --load-vars-from pipelines/credentials.yml`
+
+- rabbitmq
+- rabbitmq-broker
+- cf-cli
