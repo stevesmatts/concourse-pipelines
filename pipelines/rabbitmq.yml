@@ -102,6 +102,5 @@ jobs:
   - put: transfer-releases
     params: {
       "sync_dir" : "release",
-      "rsync_base" : "/data/repo/bosh_io",
       "rsync_opts" : ["-Pav", "--ignore-existing"]
     }
