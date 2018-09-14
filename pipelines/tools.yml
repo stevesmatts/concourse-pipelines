@@ -54,7 +54,7 @@ jobs:
         - incoming-release
         - release
         - bosh-cli
-  - put: transfer-releases
+  - put: transfer-bosh-cli
     params: {
       "sync_dir": "release",
       "rsync_opts": ["-Pav", "--ignore-existing"]
