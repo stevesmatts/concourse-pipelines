@@ -11,3 +11,6 @@ fly -t mirror up -p tools
 
 fly -t mirror sp -n -p memcache -c pipelines/memcache.yml --load-vars-from credentials.yml
 fly -t mirror up -p memcache
+
+fly -t mirror sp -n -p mysql -c pipelines/mysql.yml --load-vars-from credentials.yml
+fly -t mirror up -p mysql
