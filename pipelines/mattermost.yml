@@ -39,13 +39,13 @@ jobs:
         type: docker-image
         source: {repository: ubuntu}
       inputs:
-      - name: pipelines
+      - name: pipelines-repo
       - name: mattermost-boshrelease
         path: incoming-release
       outputs:
       - name: release
       run:
-        path: pipelines/scripts/rename-release.sh
+        path: pipelines-repo/scripts/rename-release.sh
         args: [mattermost-boshrelease]
   - put: transfer-releases
     params: {
