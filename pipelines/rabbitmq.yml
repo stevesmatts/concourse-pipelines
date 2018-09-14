@@ -7,7 +7,7 @@ resource_types:
     tag: latest
 
 resources:
-- name: pipelines
+- name: pipelines-repo
   type: git
   source:
     uri: https://github.com/stevesmatts/concourse-pipelines.git
@@ -37,7 +37,7 @@ jobs:
 - name: fetch-rabbitmq
   public: true
   plan:
-  - get: pipelines
+  - get: pipelines-repo
   - get: cf-rabbitmq-release
     trigger: true
   - get: cf-rabbitmq-multitenant-broker-release

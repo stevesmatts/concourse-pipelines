@@ -1,24 +1,156 @@
 # concourse-pipelines
 
-## Pipelines
+### Table of Contents
+* <a href='#install'>Install Docker</a>
+* <a href='#prepare'>Prepare Server</a>
+* <a href='#concourse'>Install and configure concourse</a>
+* <a href='#run'>Run Docker Concourse</a>
+* <a href='#configure'>Configure Pipelines</a>
+* <a href='#roles'>Pipelines roles</a>
+
+## <a name='install'></a>Install Docker
+
+###  Install required repositories and packages
+
+```bash
+$ sudo apt-get update
+$ sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    software-properties-common
+$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+$ sudo apt-key fingerprint 0EBFCD88
+
+pub   4096R/0EBFCD88 2017-02-22
+      Key fingerprint = 9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88
+uid                  Docker Release (CE deb) <docker@docker.com>
+sub   4096R/F273FCD8 2017-02-22
+$ sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+$ sudo apt-get update
+$ sudo apt-get install docker-ce docker-compose
+$ sudo systemctl enable docker
+``` 
+
+### Run docker to confirm it works
+
+`$ sudo docker run hello-world`
+
+### Add our user to the docker group and test it works
+
+```bash
+$ sudo usermod -aG docker $USER
+$ docker run hello-world
+```
+
+## <a name='prepare'></a>Prepare Server
+
+### Data directory
+
+```bash
+$ sudo chown joe:joe /data/logs
+$ sudo chown joe:joe /data/repo
+$ sudo chown joe:joe /data/scripts
+```
+
+### User
+
+```bash
+$ cd ~
+$ mkdir .ssh
+$ chmod 700 .ssh
+$ cd .ssh
+$ ssh-keygen -t rsa -b 4096 -C "joe"
+```
+
+## <a name='concourse'></a>Install and configure concourse
+
+### Clone the concourse-docker repository
+
+```bash
+$ cd /data/scripts
+$ git clone https://github.com/concourse/concourse-docker.git
+```
+
+### Setup Docker Concourse
+
+```bash
+$ cd /data/scripts/concourse-docker
+$ ./generate-keys.sh
+```
+
+### Edit the docker-compose.yml
+
+```bash
+$ cd /data/scripts/concourse-docker
+$ vim docker-compose.yml
+```
+
+Lines to changes:
+- Append after 5
+  - `restart: always`
+- Append after 16
+  - `restart: always`
+- Edit 27
+  - Change the test user to joe:<password from syspass>
+- Append after 27
+  - `- CONCOURSE_MAIN_TEAM_LOCALUSER=joe`
+- Append after 36
+  - `restart: always`
+  
+## <a name='run'></a>Run Docker Concourse
+
+`$ docker-compose -f /data/scripts/concourse-docker/docker-compose.yml up -d`
+
+## <a name='configure'></a>Configure Pipelines
+
+### Get the `fly` binary
+
+```bash
+$ cd /data/scripts
+$ curl -Lo fly https://github.com/concourse/concourse/releases/download/v4.1.0/fly_linux_amd64 
+$ chmod +x fly 
+$ sudo mv fly /usr/local/bin/
+```
+
+### Clone the pipelines and generate the credentials file
+
+```bash
+$ cd /data/scripts
+$ git clone https://github.com/stevesmatts/concourse-pipelines.git
+$ cd concourse-pipelines
+$ vim credentials.yml
+```
+
+Credentials.yml content:
+
+```text
+sync_server: <VM IP>
+rsync_user: joe
+rsync_key: |
+  <CONTENT OF ~/.ssh/id_rsa>
+```
+
+### Login to Concourse and push the pipelines
+
+```bash
+$ cd concourse-pipelines
+$ fly -t mirror l -c http://127.0.0.1:8080 -u joe -p <ENTER PASSWORD>
+$ ./set_pipeline.sh
+```
+
+## <a name='roles'></a>Pipelines roles
 
 ### Mattermost
-
-```
-fly -t mirror set-pipeline --pipeline mattermost --config pipelines/mattermost.yml --load-vars-from pipelines/credentials.yml
-fly -t mirror unpause-pipeline -p mattermost
-```
 
 Pulls the following artifacts:
 - bosh.io:
   - mattermost
 
 ### RabbitMQ
-
-```
-fly -t mirror set-pipeline --pipeline rabbitmq --config pipelines/rabbitmq.yml --load-vars-from pipelines/credentials.yml
-fly -t mirror unpause-pipeline -p rabbitmq
-```
 
 Pulls the following artifacts:
 - bosh.io:

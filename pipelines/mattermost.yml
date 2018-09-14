@@ -7,7 +7,7 @@ resource_types:
     tag: latest
 
 resources:
-- name: pipelines
+- name: pipelines-repo
   type: git
   source:
     uri: https://github.com/stevesmatts/concourse-pipelines.git
@@ -29,7 +29,7 @@ jobs:
 - name: fetch-mattermost
   public: true
   plan:
-  - get: pipelines
+  - get: pipelines-repo
   - get: mattermost-boshrelease
     trigger: true
   - task: fetch-mattermost
