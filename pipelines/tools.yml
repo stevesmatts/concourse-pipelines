@@ -25,6 +25,19 @@ resources:
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
+- name: cf-cli-release
+  type: github-release
+  source:
+    owner: cloudfoundry
+    repository: cli
+- name: transfer-cf-cli
+  type: rsync-resource
+  source:
+    server: ((rsync_server))
+    base_dir: /data/repo/cf_cli
+    user : ((rsync_user))
+    private_key: ((rsync_key))
+    disable_version_path: true
 
 jobs:
 - name: fetch-tools
@@ -35,8 +48,13 @@ jobs:
     trigger: true
     params:
       globs:
-      - bosh-cli-*-linux-amd64
-  - task:
+      - "bosh-cli-*-linux-amd64"
+  - get: cf-cli-release
+    trigger: true
+    params:
+      globs:
+      - "bosh-cli-*-linux-amd64"
+  - task: fetch-bosh-cli
     config:
       platform: linux
       image_resource:
@@ -55,6 +73,28 @@ jobs:
         - release
         - bosh-cli
   - put: transfer-bosh-cli
+    params: {
+      "sync_dir": "release",
+      "rsync_opts": ["-Pav", "--ignore-existing"]
+    }
+  - task: fetch-cf-cli
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: ubuntu}
+      inputs:
+      - name: pipelines-repo
+      - name: cf-cli-release
+        path: incoming-release
+      outputs:
+      - name: release
+      run:
+        path: pipelines-repo/scripts/fetch-cf-cli-release.sh
+        args:
+        - incoming-release
+        - release
+  - put: transfer-cf-cli
     params: {
       "sync_dir": "release",
       "rsync_opts": ["-Pav", "--ignore-existing"]
