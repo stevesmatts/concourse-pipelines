@@ -1,0 +1,60 @@
+---
+resource_types:
+- name: rsync-resource
+  type: docker-image
+  source:
+    repository: mrsixw/concourse-rsync-resource
+    tag: latest
+
+resources:
+- name: pipelines-repo
+  type: git
+  source:
+    uri: https://github.com/stevesmatts/concourse-pipelines.git
+    branch: master
+- name: bosh-cli-release
+  type: github-release
+  source:
+    owner: cloudfoundry
+    repository: bosh-cli
+- name: transfer-bosh-cli
+  type: rsync-resource
+  source:
+    server: ((rsync_server))
+    base_dir: /data/repo/bosh_cli
+    user : ((rsync_user))
+    private_key: ((rsync_key))
+    disable_version_path: true
+
+jobs:
+- name: fetch-tools
+  public: true
+  plan:
+  - get: pipelines-repo
+  - get: bosh-cli-release
+    trigger: true
+    params:
+      globs:
+      - bosh-cli-*-linux-amd64
+  - task:
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: ubuntu}
+      inputs:
+      - name: pipelines-repo
+      - name: bosh-cli-release
+        path: incoming-release
+      outputs:
+      - name: release
+      run:
+        path: pipelines-repo/scripts/copy-github-release.sh
+        args:
+        - incoming-release
+        - release
+        - bosh-cli
+  - put: transfer-releases
+    params: {
+      "sync_dir" : "release",
+      "rsync_opts" : ["-Pav", "--ignore-existing"]

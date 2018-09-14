@@ -5,3 +5,6 @@ fly -t mirror up -p mattermost
 
 fly -t mirror sp -n -p rabbitmq -c pipelines/rabbitmq.yml --load-vars-from credentials.yml
 fly -t mirror up -p rabbitmq
+
+fly -t mirror sp -n -p tools -c pipelines/tools.yml --load-vars-from credentials.yml
+fly -t mirror up -p tools
