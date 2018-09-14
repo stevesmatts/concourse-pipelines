@@ -132,6 +132,7 @@ sync_server: <VM IP>
 rsync_user: joe
 rsync_key: |
   <CONTENT OF ~/.ssh/id_rsa>
+github_access_token: <A GIT PERSONAL ACCESS TOKEN>
 ```
 
 ### Login to Concourse and push the pipelines

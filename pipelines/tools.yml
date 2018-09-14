@@ -17,6 +17,7 @@ resources:
   source:
     owner: cloudfoundry
     repository: bosh-cli
+    access_token: ((github_access_token))
 - name: transfer-bosh-cli
   type: rsync-resource
   source:
@@ -30,11 +31,26 @@ resources:
   source:
     owner: cloudfoundry
     repository: cli
+    access_token: ((github_access_token))
 - name: transfer-cf-cli
   type: rsync-resource
   source:
     server: ((rsync_server))
     base_dir: /data/repo/cf_cli
+    user : ((rsync_user))
+    private_key: ((rsync_key))
+    disable_version_path: true
+- name: credhub-cli-release
+  type: github-release
+  source:
+    owner: cloudfoundry-incubator
+    repository: credhub-cli
+    access_token: ((github_access_token))
+- name: transfer-credhub-cli
+  type: rsync-resource
+  source:
+    server: ((rsync_server))
+    base_dir: /data/repo/credhub_cli
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
@@ -51,9 +67,11 @@ jobs:
       - "bosh-cli-*-linux-amd64"
   - get: cf-cli-release
     trigger: true
+  - get: credhub-cli-release
+    trigger: true
     params:
       globs:
-      - "bosh-cli-*-linux-amd64"
+      - "credhub-linux-*.tgz"
   - task: fetch-bosh-cli
     config:
       platform: linux
@@ -95,6 +113,29 @@ jobs:
         - incoming-release
         - release
   - put: transfer-cf-cli
+    params: {
+      "sync_dir": "release",
+      "rsync_opts": ["-Pav", "--ignore-existing"]
+    }
+  - task: fetch-credhub-cli
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: ubuntu}
+      inputs:
+      - name: pipelines-repo
+      - name: credhub-cli-release
+        path: incoming-release
+      outputs:
+      - name: release
+      run:
+        path: pipelines-repo/scripts/copy-github-release.sh
+        args:
+        - incoming-release
+        - release
+        - credhub
+  - put: transfer-credhub-cli
     params: {
       "sync_dir": "release",
       "rsync_opts": ["-Pav", "--ignore-existing"]
