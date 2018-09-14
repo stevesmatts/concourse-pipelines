@@ -57,8 +57,11 @@ jobs:
       outputs:
       - name: release
       run:
-        path: pipelines-repo/scripts/rename-release.sh
-        args: [cf-rabbitmq-release]
+        path: pipelines-repo/scripts/copy-bosh-io-release.sh
+        args:
+        - incoming-release
+        - release
+        - cf-rabbitmq-release
   - put: transfer-releases
     params: {
       "sync_dir" : "release",
@@ -77,8 +80,11 @@ jobs:
       outputs:
       - name: release
       run:
-        path: pipelines-repo/scripts/rename-release.sh
-        args: [cf-rabbitmq-multitenant-broker-release]
+        path: pipelines-repo/scripts/copy-bosh-io-release.sh
+        args:
+        - incoming-release
+        - release
+        - cf-rabbitmq-multitenant-broker-release
   - put: transfer-releases
     params: {
       "sync_dir" : "release",
@@ -97,8 +103,11 @@ jobs:
       outputs:
       - name: release
       run:
-        path: pipelines-repo/scripts/rename-release.sh
-        args: [cf-cli-release]
+        path: pipelines-repo/scripts/copy-bosh-io-release.sh
+        args:
+        - incoming-release
+        - release
+        - cf-cli-release
   - put: transfer-releases
     params: {
       "sync_dir" : "release",

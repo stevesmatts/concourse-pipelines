@@ -45,8 +45,11 @@ jobs:
       outputs:
       - name: release
       run:
-        path: pipelines-repo/scripts/rename-release.sh
-        args: [mattermost-boshrelease]
+        path: pipelines-repo/scripts/copy-bosh-io-release.sh
+        args:
+        - incoming-release
+        - release
+        - mattermost-boshrelease
   - put: transfer-releases
     params: {
       "sync_dir" : "release",

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -e
+
+SOURCE_FOLDER=$1
+OUTPUT_FOLDER=$2
+RELEASE_NAME=$3
+
+RELEASE_ARTIFACT=${RELEASE_NAME}-$(cat ${SOURCE_FOLDER}/version).tgz
+
+cp ${SOURCE_FOLDER}/release.tgz ${OUTPUT_FOLDER}/${RELEASE_ARTIFACT}
