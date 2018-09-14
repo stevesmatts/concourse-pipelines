@@ -8,3 +8,6 @@ fly -t mirror up -p rabbitmq
 
 fly -t mirror sp -n -p tools -c pipelines/tools.yml --load-vars-from credentials.yml
 fly -t mirror up -p tools
+
+fly -t mirror sp -n -p memcache -c pipelines/memcache.yml --load-vars-from credentials.yml
+fly -t mirror up -p memcache
