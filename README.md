@@ -7,6 +7,7 @@
 * <a href='#run'>Run Docker Concourse</a>
 * <a href='#configure'>Configure Pipelines</a>
 * <a href='#roles'>Pipelines roles</a>
+* <a href='#support'>Supporting tools</a>
 
 ## <a name='install'></a>Install Docker
 
@@ -140,7 +141,7 @@ github_access_token: <A GIT PERSONAL ACCESS TOKEN>
 ```bash
 $ cd concourse-pipelines
 $ fly -t mirror l -c http://127.0.0.1:8080 -u joe -p <ENTER PASSWORD>
-$ ./set_pipeline.sh
+$ ./set_pipelines.sh
 ```
 
 ## <a name='roles'></a>Pipelines roles
@@ -149,12 +150,44 @@ $ ./set_pipeline.sh
 
 Pulls the following artifacts:
 - bosh.io:
-  - mattermost
+  - cloudfoundry-community/mattermost-boshrelease
+  
+### Memcache
+
+Pulls the following artifacts:
+- bosh.io:
+  - cloudfoundry-community/memcache-release
+  
+### MySQL
+
+Pulls the following artifacts:
+- bosh.io:
+  - cloudfoundry/cf-mysql-release
 
 ### RabbitMQ
 
 Pulls the following artifacts:
 - bosh.io:
-  - rabbitmq
-  - rabbitmq-broker
-  - cf-cli
+  - pivotal-cf/cf-rabbitmq-release
+  - pivotal-cf/cf-rabbitmq-multitenant-broker-release
+  - bosh-packages/cf-cli-release
+
+### Tools
+Pulls the following artifacts:
+- github.com releases:
+  - cloudfoundry/bosh-cli
+  - cloudfoundry/cli
+  - cloudfoundry-incubator/credhub-cli
+  - cloudfoundry-incubator/bosh-backup-and-restore
+  
+## <a name='support'></a>Supporting Tools
+
+### Cronjobs
+
+#### Cleanup downloaded artifacts
+
+Edit `/etc/crontab` and add the following content
+
+```bash
+@daily root find '/data/repo/*' -mtime +6 -type f -delete
+```
