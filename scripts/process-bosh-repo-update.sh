@@ -20,6 +20,6 @@ URLS="$(bosh int manifest.yml --path /releases | grep url | awk '{split($0,a,"ur
 pushd ${OUTPUT_FOLDER}
 for URL in ${URLS}
 do
-    curl -LO ${URL}
+    curl -LOJ ${URL}
 done
 popd
