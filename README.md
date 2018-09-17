@@ -146,6 +146,10 @@ $ ./set_pipelines.sh
 
 ## <a name='roles'></a>Pipelines roles
 
+### Director
+
+Pulls the required artifacts defined in the bosh-deployment github repo. See scripts/process-bosh-repo-updates.sh
+
 ### Mattermost
 
 Pulls the following artifacts:

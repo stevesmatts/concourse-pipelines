@@ -1,0 +1,57 @@
+---
+resource_types:
+- name: rsync-resource
+  type: docker-image
+  source:
+    repository: mrsixw/concourse-rsync-resource
+    tag: latest
+
+resources:
+- name: pipelines-repo
+  type: git
+  source:
+    uri: https://github.com/stevesmatts/concourse-pipelines.git
+    branch: master
+- name: bosh-deployment-repo
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh-deployment.git
+    branch: master
+- name: transfer-releases
+  type: rsync-resource
+  source:
+    server: ((rsync_server))
+    base_dir: /data/repo/bosh_io
+    user : ((rsync_user))
+    private_key: ((rsync_key))
+    disable_version_path: true
+
+jobs:
+- name: fetch-director
+  public: true
+  plan:
+  - get: pipelines-repo
+  - get: bosh-deployment-repo
+    trigger: true
+  - task: fetch-director
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: starkandwayne/concourse}
+      inputs:
+      - name: pipelines-repo
+      - name: bosh-deployment-repo
+        path: incoming-repo
+      outputs:
+      - name: releases
+      run:
+        path: pipelines-repo/scripts/process-bosh-repo-update.sh
+        args:
+        - incoming-repo
+        - releases
+  - put: transfer-releases
+    params: {
+      "sync_dir": "releases",
+      "rsync_opts": ["-Pav", "--ignore-existing"]
+    }
