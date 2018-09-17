@@ -15,7 +15,7 @@ bosh int ${BOSH_REPO_LOCATION}/bosh.yml \
   -o ${BOSH_REPO_LOCATION}/jumpbox-user.yml \
   -o ${BOSH_REPO_LOCATION}/bbr.yml >> manifest.yml
 
-URLS="$(bosh int manifest.yml --path /releases | grep url | awk '{split$0,a,"url:"); print a[2]'})"
+URLS="$(bosh int manifest.yml --path /releases | grep url | awk '{split($0,a,"url:"); print a[2]}')"
 
 pushd ${OUTPUT_FOLDER}
 for URL in ${URLS}
