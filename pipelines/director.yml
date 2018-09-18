@@ -25,6 +25,14 @@ resources:
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
+- name: transfer-stemcells
+  type: rsync-resource
+  source:
+    server: ((rsync_server))
+    base_dir: /data/repo/bosh_io_stemcells
+    user : ((rsync_user))
+    private_key: ((rsync_key))
+    disable_version_path: true
 
 jobs:
 - name: fetch-director
@@ -45,14 +53,21 @@ jobs:
         path: incoming-repo
       outputs:
       - name: releases
+      - name: stemcells
       run:
         path: pipelines-repo/scripts/process-bosh-repo-update.sh
         args:
         - incoming-repo
         - releases
         - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
+        - stemcells
   - put: transfer-releases
     params: {
       "sync_dir": "releases",
+      "rsync_opts": ["-Pav", "--ignore-existing"]
+    }
+  - put: transfer-stemcells
+    params: {
+      "sync_dir": "stemcells",
       "rsync_opts": ["-Pav", "--ignore-existing"]
     }

@@ -5,6 +5,7 @@ set -e
 BOSH_REPO_LOCATION=$1
 OUTPUT_FOLDER=$2
 FETCH_SCRIPT=$3
+STEMCELL_FOLDER=$4
 
 # Generate a manifest with all the required files
 bosh int ${BOSH_REPO_LOCATION}/bosh.yml \
@@ -20,6 +21,6 @@ source ${FETCH_SCRIPT} manifest.yml ${OUTPUT_FOLDER}
 
 STEMCELL_URL=$(bosh int manifest.yml --path /resource_pools/name=vms/stemcell/url)
 
-pushd ${OUTPUT_FOLDER}/stemcells
+pushd ${STEMCELL_FOLDER}
 curl -LOJ ${STEMCELL_URL}
 popd
