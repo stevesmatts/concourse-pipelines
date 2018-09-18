@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+shopt -s nullglob
 
 MANIFEST=$1
 OUTPUT_FOLDER=$2
