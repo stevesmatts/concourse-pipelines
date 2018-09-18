@@ -10,7 +10,7 @@ STEMCELL_FOLDER=$5
 
 # Generate a manifest with all the required files
 bosh int ${REPO_LOCATION}/cf-deployment.yml \
-  -o ${REPO_LOCATION}/operations/enable-nfs-volumen-service.yml \
+  -o ${REPO_LOCATION}/operations/enable-nfs-volume-service.yml \
   -o ${REPO_LOCATION}/operations/use-compiled-releases.yml \
   -o ${REPO_LOCATION}/operations/backup-and-restore/enable-backup-restore.yml \
   -o ${OPS_FOLDER}/remove_buildpacks.yml >> manifest.yml
