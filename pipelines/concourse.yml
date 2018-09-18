@@ -1,0 +1,58 @@
+---
+resource_types:
+- name: rsync-resource
+  type: docker-image
+  source:
+    repository: mrsixw/concourse-rsync-resource
+    tag: latest
+
+resources:
+- name: pipelines-repo
+  type: git
+  source:
+    uri: https://github.com/stevesmatts/concourse-pipelines.git
+    branch: master
+- name: concourse-deployment-repo
+  type: git
+  source:
+    uri: https://github.com/concourse/concourse-bosh-deployment.git
+    branch: master
+- name: transfer-releases
+  type: rsync-resource
+  source:
+    server: ((rsync_server))
+    base_dir: /data/repo/bosh_io
+    user : ((rsync_user))
+    private_key: ((rsync_key))
+    disable_version_path: true
+
+jobs:
+- name: fetch-concourse
+  public: true
+  plan:
+  - get: pipelines-repo
+  - get: concourse-deployment-repo
+    trigger: true
+  - task: fetch-concourse
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: starkandwayne/concourse}
+      inputs:
+      - name: pipelines-repo
+      - name: concourse-deployment-repo
+        path: incoming-repo
+      outputs:
+      - name: releases
+      run:
+        path: pipelines-repo/scripts/process-concourse-repo-update.sh
+        args:
+        - incoming-repo
+        - releases
+        - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
+  - put: transfer-releases
+    params: {
+      "sync_dir": "releases",
+      "rsync_opts": ["-Pav", "--ignore-existing"]
+    }

@@ -148,7 +148,11 @@ $ ./set_pipelines.sh
 
 ### Director
 
-Pulls the required artifacts defined in the bosh-deployment github repo. See scripts/process-bosh-repo-updates.sh
+Pulls the required artifacts defined in the bosh-deployment github repo. See scripts/process-bosh-repo-update.sh
+
+### Concourse
+
+Pulls the required artifacts defined in the concourse-bosh-deployment github repo. See scripts/process-concourse-repo-update.sh
 
 ### Mattermost
 
