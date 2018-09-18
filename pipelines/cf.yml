@@ -60,10 +60,15 @@ jobs:
         - incoming-repo
         - releases
         - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
-        - pieplines-repo/scripts/ops_files
+        - pipelines-repo/scripts/ops_files
         - stemcells
   - put: transfer-releases
     params: {
       "sync_dir": "releases",
+      "rsync_opts": ["-Pav", "--ignore-existing"]
+    }
+  - put: transfer-stemcells
+    params: {
+      "sync_dir": "stemcells",
       "rsync_opts": ["-Pav", "--ignore-existing"]
     }
