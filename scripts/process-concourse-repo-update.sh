@@ -8,6 +8,6 @@ FETCH_SCRIPT=$3
 
 # Generate a manifest with all the required files
 bosh int ${REPO_LOCATION}/cluster/concourse.yml \
-  -o ${REPO_LOCATION}/versions.yml >> manifest.yml
+  -l ${REPO_LOCATION}/versions.yml >> manifest.yml
 
 source ${FETCH_SCRIPT} manifest.yml ${OUTPUT_FOLDER}
