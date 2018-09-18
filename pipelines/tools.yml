@@ -96,7 +96,7 @@ jobs:
       platform: linux
       image_resource:
         type: docker-image
-        source: {repository: ubuntu}
+        source: {repository: starkandwayne/concourse}
       inputs:
       - name: pipelines-repo
       - name: bosh-cli-release
@@ -119,7 +119,7 @@ jobs:
       platform: linux
       image_resource:
         type: docker-image
-        source: {repository: tutum/curl}
+        source: {repository: starkandwayne/concourse}
       inputs:
       - name: pipelines-repo
       - name: cf-cli-release
@@ -141,7 +141,7 @@ jobs:
       platform: linux
       image_resource:
         type: docker-image
-        source: {repository: ubuntu}
+        source: {repository: starkandwayne/concourse}
       inputs:
       - name: pipelines-repo
       - name: credhub-cli-release
@@ -164,7 +164,7 @@ jobs:
       platform: linux
       image_resource:
         type: docker-image
-        source: {repository: ubuntu}
+        source: {repository: starkandwayne/concourse}
       inputs:
       - name: pipelines-repo
       - name: bbr-release

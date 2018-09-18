@@ -37,7 +37,7 @@ jobs:
       platform: linux
       image_resource:
         type: docker-image
-        source: {repository: ubuntu}
+        source: {repository: starkandwayne/concourse}
       inputs:
       - name: pipelines-repo
       - name: mysql-boshrelease
@@ -54,4 +54,4 @@ jobs:
     params: {
       "sync_dir" : "release",
       "rsync_opts" : ["-Pav", "--ignore-existing"]
-}
+    }

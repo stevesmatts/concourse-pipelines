@@ -49,7 +49,7 @@ jobs:
       platform: linux
       image_resource:
         type: docker-image
-        source: {repository: ubuntu}
+        source: {repository: starkandwayne/concourse}
       inputs:
       - name: pipelines-repo
       - name: cf-rabbitmq-release
@@ -72,7 +72,7 @@ jobs:
       platform: linux
       image_resource:
         type: docker-image
-        source: {repository: ubuntu}
+        source: {repository: starkandwayne/concourse}
       inputs:
       - name: pipelines-repo
       - name: cf-rabbitmq-multitenant-broker-release
@@ -95,7 +95,7 @@ jobs:
       platform: linux
       image_resource:
         type: docker-image
-        source: {repository: ubuntu}
+        source: {repository: starkandwayne/concourse}
       inputs:
       - name: pipelines-repo
       - name: cf-cli-release
