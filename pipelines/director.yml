@@ -50,6 +50,7 @@ jobs:
         args:
         - incoming-repo
         - releases
+        - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
   - put: transfer-releases
     params: {
       "sync_dir": "releases",

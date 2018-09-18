@@ -4,6 +4,7 @@ set -e
 
 BOSH_REPO_LOCATION=$1
 OUTPUT_FOLDER=$2
+FETCH_SCRIPT=$3
 
 # Generate a manifest with all the required files
 bosh int ${BOSH_REPO_LOCATION}/bosh.yml \
@@ -15,11 +16,4 @@ bosh int ${BOSH_REPO_LOCATION}/bosh.yml \
   -o ${BOSH_REPO_LOCATION}/jumpbox-user.yml \
   -o ${BOSH_REPO_LOCATION}/bbr.yml >> manifest.yml
 
-URLS="$(bosh int manifest.yml --path /releases | grep url | awk '{split($0,a,"url:"); print a[2]}')"
-
-pushd ${OUTPUT_FOLDER}
-for URL in ${URLS}
-do
-    curl -LOJ ${URL}
-done
-popd
+source ${FETCH_SCRIPT} manifest.yml ${OUTPUT_FOLDER}
