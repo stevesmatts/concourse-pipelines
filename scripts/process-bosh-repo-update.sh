@@ -17,3 +17,9 @@ bosh int ${BOSH_REPO_LOCATION}/bosh.yml \
   -o ${BOSH_REPO_LOCATION}/bbr.yml >> manifest.yml
 
 source ${FETCH_SCRIPT} manifest.yml ${OUTPUT_FOLDER}
+
+STEMCELL_URL=$(bosh int manifest.yml --path /resource_pools/name=vms/stemcell/url)
+
+pushd ${OUTPUT_FOLDER}/stemcells
+curl -LOJ ${STEMCELL_URL}
+popd
