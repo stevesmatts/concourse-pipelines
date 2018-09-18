@@ -146,13 +146,17 @@ $ ./set_pipelines.sh
 
 ## <a name='roles'></a>Pipelines roles
 
-### Director
+### CF
 
-Pulls the required artifacts defined in the bosh-deployment github repo. See scripts/process-bosh-repo-update.sh
+Pulls the required artifacts defined in the cf-deployment github repo. See scripts/process-cf-repo-update.sh
 
 ### Concourse
 
 Pulls the required artifacts defined in the concourse-bosh-deployment github repo. See scripts/process-concourse-repo-update.sh
+
+### Director
+
+Pulls the required artifacts defined in the bosh-deployment github repo. See scripts/process-bosh-repo-update.sh
 
 ### Mattermost
 
