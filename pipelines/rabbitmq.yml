@@ -36,6 +36,7 @@ resources:
 jobs:
 - name: fetch-rabbitmq
   public: true
+  build_logs_to_retain: 1
   plan:
   - get: pipelines-repo
   - get: cf-rabbitmq-release

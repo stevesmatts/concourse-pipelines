@@ -37,6 +37,7 @@ resources:
 jobs:
 - name: fetch-director
   public: true
+  build_logs_to_retain: 1
   plan:
   - get: pipelines-repo
   - get: bosh-deployment-repo

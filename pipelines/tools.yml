@@ -72,6 +72,7 @@ resources:
 jobs:
 - name: fetch-tools
   public: true
+  build_logs_to_retain: 1
   plan:
   - get: pipelines-repo
   - get: bosh-cli-release
