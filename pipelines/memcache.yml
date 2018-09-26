@@ -5,6 +5,11 @@ resource_types:
   source:
     repository: mrsixw/concourse-rsync-resource
     tag: latest
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
 
 resources:
 - name: pipelines-repo
@@ -24,35 +29,53 @@ resources:
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
+- name: notify
+  type: slack-notification
+  source:
+    url: ((slack_hook))
+    disable: ((slack_disabled))
 
 jobs:
 - name: fetch-memcache
   public: true
   build_logs_to_retain: 1
   plan:
-  - get: pipelines-repo
-  - get: memcache-boshrelease
-    trigger: true
-  - task: fetch-memcache
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: {repository: starkandwayne/concourse}
-      inputs:
-      - name: pipelines-repo
-      - name: memcache-boshrelease
-        path: incoming-release
-      outputs:
-      - name: release
-      run:
-        path: pipelines-repo/scripts/copy-bosh-io-release.sh
-        args:
-        - incoming-release
-        - release
-        - memcache-release
-  - put: transfer-releases
-    params: {
-      "sync_dir" : "release",
-      "rsync_opts" : ["-Pav", "--ignore-existing"]
-    }
+  - do:
+    - get: pipelines-repo
+    - get: memcache-boshrelease
+      trigger: true
+    - task: fetch-memcache
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: memcache-boshrelease
+          path: incoming-release
+        outputs:
+        - name: release
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          args:
+          - incoming-release
+          - release
+          - memcache-release
+    - put: transfer-releases
+      params: {
+        "sync_dir": "release",
+        "rsync_opts": ["-Pav", "--ignore-existing"]
+      }
+    on_failure:
+      put: notify
+      params:
+        username: $BUILD_PIPELINE_NAME
+        icon_emoji: ":skull_and_crossbones:"
+        text: $BUILD_JOB_NAME job failed
+    on_success:
+      put: notify
+      params:
+        username: $BUILD_PIPELINE_NAME
+        icon_emoji: ":thumbsup:"
+        text: $BUILD_JOB_NAME job succeeded

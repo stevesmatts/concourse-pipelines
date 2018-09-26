@@ -11,6 +11,16 @@
 
 ## <a name='install'></a>Install Docker
 
+###  Pre-requisite
+
+To not fill up the root partition we will symlink dockers /var/lib/docker to our /data mount
+
+```bash
+$ mkdir /data/docker
+$ cd /var/lib
+$ ln -sf /data/docker .
+```
+
 ###  Install required repositories and packages
 
 ```bash
@@ -134,6 +144,8 @@ rsync_user: joe
 rsync_key: |
   <CONTENT OF ~/.ssh/id_rsa>
 github_access_token: <A GIT PERSONAL ACCESS TOKEN>
+slack_hook: <SLACK INCOMING WEB HOOK>
+slack_disabled: false      # Notification ca be disabled with this flag
 ```
 
 ### Login to Concourse and push the pipelines

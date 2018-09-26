@@ -5,6 +5,11 @@ resource_types:
   source:
     repository: mrsixw/concourse-rsync-resource
     tag: latest
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
 
 resources:
 - name: pipelines-repo
@@ -33,42 +38,60 @@ resources:
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
+- name: notify
+  type: slack-notification
+  source:
+    url: ((slack_hook))
+    disable: ((slack_disabled))
 
 jobs:
 - name: fetch-director
   public: true
   build_logs_to_retain: 1
   plan:
-  - get: pipelines-repo
-  - get: bosh-deployment-repo
-    trigger: true
-  - task: fetch-director
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: {repository: starkandwayne/concourse}
-      inputs:
-      - name: pipelines-repo
-      - name: bosh-deployment-repo
-        path: incoming-repo
-      outputs:
-      - name: releases
-      - name: stemcells
-      run:
-        path: pipelines-repo/scripts/process-bosh-repo-update.sh
-        args:
-        - incoming-repo
-        - releases
-        - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
-        - stemcells
-  - put: transfer-releases
-    params: {
-      "sync_dir": "releases",
-      "rsync_opts": ["-Pav", "--ignore-existing"]
-    }
-  - put: transfer-stemcells
-    params: {
-      "sync_dir": "stemcells",
-      "rsync_opts": ["-Pav", "--ignore-existing"]
-    }
+  - do:
+    - get: pipelines-repo
+    - get: bosh-deployment-repo
+      trigger: true
+    - task: fetch-director
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: bosh-deployment-repo
+          path: incoming-repo
+        outputs:
+        - name: releases
+        - name: stemcells
+        run:
+          path: pipelines-repo/scripts/process-bosh-repo-update.sh
+          args:
+          - incoming-repo
+          - releases
+          - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
+          - stemcells
+    - put: transfer-releases
+      params: {
+        "sync_dir": "releases",
+        "rsync_opts": ["-Pav", "--ignore-existing"]
+      }
+    - put: transfer-stemcells
+      params: {
+        "sync_dir": "stemcells",
+        "rsync_opts": ["-Pav", "--ignore-existing"]
+      }
+    on_failure:
+      put: notify
+      params:
+        username: $BUILD_PIPELINE_NAME
+        icon_emoji: ":skull_and_crossbones:"
+        text: $BUILD_JOB_NAME job failed
+    on_success:
+      put: notify
+      params:
+        username: $BUILD_PIPELINE_NAME
+        icon_emoji: ":thumbsup:"
+        text: $BUILD_JOB_NAME job succeeded
