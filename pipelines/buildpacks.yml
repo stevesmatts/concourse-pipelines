@@ -22,12 +22,48 @@ resources:
   source:
     uri: https://github.com/stevesmatts/concourse-pipelines.git
     branch: master
+- name: binary-buildpack
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: buildpacks
+    product_version: Binary.*\d+\.\d+\.\d+
 - name: go-buildpack
   type: pivnet
   source:
     api_token: ((pivnet_token))
     product_slug: buildpacks
     product_version: Go.*\d+\.\d+\.\d+
+- name: nodejs-buildpack
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: buildpacks
+    product_version: NodeJS.*\d+\.\d+\.\d+
+- name: php-buildpack
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: buildpacks
+    product_version: PHP.*\d+\.\d+\.\d+
+- name: python-buildpack
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: buildpacks
+    product_version: Python.*\d+\.\d+\.\d+
+- name: ruby-buildpack
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: buildpacks
+    product_version: Ruby.*\d+\.\d+\.\d+
+- name: staticfile-buildpack
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: buildpacks
+    product_version: Staticfile.*\d+\.\d+\.\d+
 - name: transfer-buildpacks
   type: rsync-resource
   source:
@@ -49,9 +85,43 @@ jobs:
   plan:
   - do:
     - get: pipelines-repo
+    - get: binary-buildpack
+      trigger: true
     - get: go-buildpack
       trigger: true
-    - task: fetch-buidpacks
+    - get: nodejs-buildpack
+      trigger: true
+    - get: php-buildpack
+      trigger: true
+    - get: python-buildpack
+      trigger: true
+    - get: ruby-buildpack
+      trigger: true
+    - get: staticfile-buildpack
+      trigger: true
+    - task: fetch-binary-buildpacks
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: binary-buildpack
+          path: incoming-buildpacks
+        outputs:
+        - name: buildpacks
+        run:
+          path: pipelines-repo/scripts/copy-buildpacks.sh
+          args:
+          - incoming-buildpacks
+          - buildpacks
+    - put: transfer-buildpacks
+      params: {
+        "sync_dir" : "buildpacks",
+        "rsync_opts" : ["-Pav", "--ignore-existing"]
+      }
+    - task: fetch-go-buildpacks
       config:
         platform: linux
         image_resource:
@@ -64,7 +134,117 @@ jobs:
         outputs:
         - name: buildpacks
         run:
-          path: pipelines-repo/scripts/copy-buidpacks.sh
+          path: pipelines-repo/scripts/copy-buildpacks.sh
+          args:
+          - incoming-buildpacks
+          - buildpacks
+    - put: transfer-buildpacks
+      params: {
+        "sync_dir" : "buildpacks",
+        "rsync_opts" : ["-Pav", "--ignore-existing"]
+      }
+    - task: fetch-nodejs-buildpacks
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: nodejs-buildpack
+          path: incoming-buildpacks
+        outputs:
+        - name: buildpacks
+        run:
+          path: pipelines-repo/scripts/copy-buildpacks.sh
+          args:
+          - incoming-buildpacks
+          - buildpacks
+    - put: transfer-buildpacks
+      params: {
+        "sync_dir" : "buildpacks",
+        "rsync_opts" : ["-Pav", "--ignore-existing"]
+      }
+    - task: fetch-php-buildpacks
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: php-buildpack
+          path: incoming-buildpacks
+        outputs:
+        - name: buildpacks
+        run:
+          path: pipelines-repo/scripts/copy-buildpacks.sh
+          args:
+          - incoming-buildpacks
+          - buildpacks
+    - put: transfer-buildpacks
+      params: {
+        "sync_dir" : "buildpacks",
+        "rsync_opts" : ["-Pav", "--ignore-existing"]
+      }
+    - task: fetch-python-buildpacks
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: python-buildpack
+          path: incoming-buildpacks
+        outputs:
+        - name: buildpacks
+        run:
+          path: pipelines-repo/scripts/copy-buildpacks.sh
+          args:
+          - incoming-buildpacks
+          - buildpacks
+    - put: transfer-buildpacks
+      params: {
+        "sync_dir" : "buildpacks",
+        "rsync_opts" : ["-Pav", "--ignore-existing"]
+      }
+    - task: fetch-ruby-buildpacks
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: ruby-buildpack
+          path: incoming-buildpacks
+        outputs:
+        - name: buildpacks
+        run:
+          path: pipelines-repo/scripts/copy-buildpacks.sh
+          args:
+          - incoming-buildpacks
+          - buildpacks
+    - put: transfer-buildpacks
+      params: {
+        "sync_dir" : "buildpacks",
+        "rsync_opts" : ["-Pav", "--ignore-existing"]
+      }
+    - task: fetch-static-buildpacks
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: staticfile-buildpack
+          path: incoming-buildpacks
+        outputs:
+        - name: buildpacks
+        run:
+          path: pipelines-repo/scripts/copy-buildpacks.sh
           args:
           - incoming-buildpacks
           - buildpacks
