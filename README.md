@@ -158,6 +158,18 @@ $ ./set_pipelines.sh
 
 ## <a name='roles'></a>Pipelines roles
 
+### Buildpacks
+
+Pulls the following artifacts:
+- Pivotal Network:
+  - binary-buildpack
+  - go-buildpack
+  - nodejs-buildpack
+  - php-buildpack
+  - python-buildpack
+  - ruby-buildpack
+  - staticfile-buildpack
+
 ### CF
 
 Pulls the required artifacts defined in the cf-deployment github repo. See scripts/process-cf-repo-update.sh
@@ -181,6 +193,12 @@ Pulls the following artifacts:
 Pulls the following artifacts:
 - bosh.io:
   - cloudfoundry-community/memcache-release
+  
+### Minio
+
+Pulls the following artifacts:
+- bosh.io:
+  - minio/minio-boshrelease
   
 ### MySQL
 
