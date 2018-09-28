@@ -219,11 +219,13 @@ jobs:
         inputs:
         - name: pipelines-repo
         - name: mc-release
+          path: incoming-release
         outputs:
         - name: release
         run:
           path: pipelines-repo/scripts/fetch-mc-release.sh
           args:
+          - incoming-release
           - release
     - put: transfer-mc
       params: {

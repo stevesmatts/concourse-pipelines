@@ -2,8 +2,8 @@
 
 set -e
 
-OUTPUT_FOLDER=$1
+SOURCE_FOLDER=$1
+OUTPUT_FOLDER=$2
+VERSION=$(cat ${SOURCE_FOLDER}/version)
 
-pushd ${OUTPUT_FOLDER}
-curl -LOJ "https://dl.minio.io/client/mc/release/linux-amd64/mc"
-popd
+curl -Lo ${OUTPUT_FOLDER}/mc-${VERSION} "https://dl.minio.io/client/mc/release/linux-amd64/mc"
