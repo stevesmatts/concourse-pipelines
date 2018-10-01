@@ -26,7 +26,7 @@ resources:
   type: rsync-resource
   source:
     server: ((rsync_server))
-    base_dir: /data/repo/bosh_io_releases
+    base_dir: /data/repo/bosh/release
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
