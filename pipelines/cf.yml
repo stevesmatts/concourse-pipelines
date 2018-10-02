@@ -64,19 +64,19 @@ jobs:
         - name: cf-deployment-repo
           path: incoming-repo
         outputs:
-        - name: releases
+        - name: release
         - name: stemcells
         run:
           path: pipelines-repo/scripts/process-cf-repo-update.sh
           args:
           - incoming-repo
-          - releases
+          - release
           - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
           - pipelines-repo/scripts/ops_files
           - stemcells
     - put: transfer-releases
       params: {
-        "sync_dir": "releases",
+        "sync_dir": "release",
         "rsync_opts": ["-Pav", "--ignore-existing"]
       }
     - put: transfer-stemcells
