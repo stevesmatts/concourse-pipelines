@@ -228,8 +228,10 @@ Pulls the following artifacts:
 
 #### Cleanup downloaded artifacts
 
-Edit `/etc/crontab` and add the following content
+Run the following as `joe` to install a cron job that will clean up the repo directory on boot:
 
 ```bash
-@daily root find '/data/repo/*' -mtime +6 -type f -delete
+$ crontab <<EOF
+@daily find /data/repo/ -type f -mtime +2 -delete
+EOF
 ```
