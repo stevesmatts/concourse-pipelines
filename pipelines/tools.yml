@@ -27,7 +27,7 @@ resources:
   type: rsync-resource
   source:
     server: ((rsync_server))
-    base_dir: /data/repo/bosh_cli
+    base_dir: /data/repo/bosh
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
@@ -55,7 +55,7 @@ resources:
   type: rsync-resource
   source:
     server: ((rsync_server))
-    base_dir: /data/repo/credhub_cli
+    base_dir: /data/repo/bosh/credhub
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
@@ -69,7 +69,7 @@ resources:
   type: rsync-resource
   source:
     server: ((rsync_server))
-    base_dir: /data/repo/bbr
+    base_dir: /data/repo/bosh/bbr
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
@@ -83,7 +83,7 @@ resources:
   type: rsync-resource
   source:
     server: ((rsync_server))
-    base_dir: /data/repo/mc
+    base_dir: /data/repo/minio
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
@@ -97,7 +97,7 @@ resources:
   type: rsync-resource
   source:
     server: ((rsync_server))
-    base_dir: /data/repo/cf-mgmt
+    base_dir: /data/repo/bosh/cf-mgmt
     user : ((rsync_user))
     private_key: ((rsync_key))
     disable_version_path: true
