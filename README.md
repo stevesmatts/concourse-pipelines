@@ -131,7 +131,7 @@ $ sudo mv fly /usr/local/bin/
 
 ```bash
 $ cd /data/scripts
-$ git clone https://github.com/stevesmatts/concourse-pipelines.git
+$ git clone https://github.com/trecnoc/concourse-pipelines.git
 $ cd concourse-pipelines
 $ vim credentials.yml
 ```

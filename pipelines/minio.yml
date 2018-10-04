@@ -15,7 +15,7 @@ resources:
 - name: pipelines-repo
   type: git
   source:
-    uri: https://github.com/stevesmatts/concourse-pipelines.git
+    uri: https://github.com/trecnoc/concourse-pipelines.git
     branch: master
 - name: minio-boshrelease
   type: bosh-io-release
