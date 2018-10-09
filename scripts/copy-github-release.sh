@@ -7,4 +7,6 @@ OUTPUT_FOLDER=$2
 ARTIFACT=$3
 
 cp ${SOURCE_FOLDER}/$3* ${OUTPUT_FOLDER}/.
-cp ${SOURCE_FOLDER}/body ${OUTPUT_FOLDER}/${ARTIFACT}-$(cat ${SOURCE_FOLDER}/version)-release.md
+if [ -f ${SOURCE_FOLDER}/body ]; then
+  cp ${SOURCE_FOLDER}/body ${OUTPUT_FOLDER}/${ARTIFACT}-$(cat ${SOURCE_FOLDER}/version)-release.md
+fi
