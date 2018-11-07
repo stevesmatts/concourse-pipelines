@@ -148,6 +148,10 @@ slack_hook: <SLACK INCOMING WEB HOOK>
 slack_disabled: false      # Notification ca be disabled with this flag
 ```
 
+```bash
+chmod 660 credentials.yml
+```
+
 ### Login to Concourse and push the pipelines
 
 ```bash
@@ -226,12 +230,30 @@ Pulls the following artifacts:
 
 ### Cronjobs
 
-#### Cleanup downloaded artifacts
+##### Automate the pipelines updates
+
+Create a script in /data/scripts called update_pipelines.sh:
+
+```bash
+$ cd /data/scripts
+$ update_pipelines.sh <<EOF
+cd /data/scripts/concourse-pipelines
+git pull
+fly -t mirror l -c http://127.0.0.1:8080 -u joe -p <ENTER PASSWORD>
+./set_pipelines.sh
+EOF
+chmod 770 update_pipelines.sh
+```
+
+#### Setup the cronjobs
 
 Run the following as `joe` to install a cron job that will clean up the repo directory on boot:
 
 ```bash
 $ crontab <<EOF
+# Cleanup downloaded artifacts
 @daily find /data/repo/ -type f -mtime +2 -delete
+# Update pipelines
+@hourly /data/scripts/update_pipelines.sh
 EOF
 ```
