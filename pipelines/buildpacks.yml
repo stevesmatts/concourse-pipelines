@@ -40,6 +40,12 @@ resources:
     api_token: ((pivnet_token))
     product_slug: buildpacks
     product_version: Go.*\d+\.\d+\.\d+
+- name: java-buildpack
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: buildpacks
+    product_version: Java.*\d+\.\d+\.\d+
 - name: nodejs-buildpack
   type: pivnet
   source:
@@ -97,6 +103,10 @@ jobs:
       trigger: true
     - get: go-buildpack
       trigger: true
+    - get: java-buildpack
+      trigger: true
+      params:
+        globs: ["*offline*.zip"]
     - get: nodejs-buildpack
       trigger: true
     - get: php-buildpack
@@ -160,6 +170,28 @@ jobs:
         inputs:
         - name: pipelines-repo
         - name: go-buildpack
+          path: incoming-buildpacks
+        outputs:
+        - name: buildpacks
+        run:
+          path: pipelines-repo/scripts/copy-buildpacks.sh
+          args:
+          - incoming-buildpacks
+          - buildpacks
+    - put: transfer-buildpacks
+      params: {
+        "sync_dir" : "buildpacks",
+        "rsync_opts" : ["-Pav", "--ignore-existing"]
+      }
+    - task: fetch-java-buildpacks
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: java-buildpack
           path: incoming-buildpacks
         outputs:
         - name: buildpacks
