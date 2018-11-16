@@ -104,7 +104,7 @@ jobs:
       trigger: true
     - get: staticfile-buildpack
       trigger: true
-    - task: transfer-buildpacks
+    - task: collect-buildpacks
       config:
         platform: linux
         image_resource:
@@ -121,12 +121,28 @@ jobs:
         - name: python-buildpack
         - name: ruby-buildpack
         - name: staticfile-buildpack
+        outputs:
+        - name: outgoing-artifacts
         run:
-          path: pipelines-repo/scripts/copy-buildpacks.sh
+          path: pipelines-repo/scripts/collect-buildpacks.sh
+          args:
+          - outgoing-artifacts
+    - task: transfer-artifacts
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: outgoing-artifacts
+        run:
+          path: pipelines-repo/scripts/rsync.sh
           args:
           - ((rsync_server))
           - ((rsync_user))
           - ((rsync_key_base64))
+          - outgoing-artifacts
           - /data/repo/buildpacks
     on_failure:
       put: notify
