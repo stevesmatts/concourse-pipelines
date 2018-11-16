@@ -2,22 +2,32 @@
 
 set -e
 
-REPO_LOCATION=$1
-OUTPUT_FOLDER=$2
-FETCH_SCRIPT=$3
-OPS_FOLDER=$4
+GITHUB_RELEASE_LOCATION=$1
+FETCH_SCRIPT=$2
+OPS_FOLDER=$3
+RELEASE_FOLDER=$4
 STEMCELL_FOLDER=$5
 
-# Generate a manifest with all the required files
+echo Extracting source.tar.gz
+tar xzf ${GITHUB_RELEASE_LOCATION}/source.tar.gz
+
+echo Generate a manifest with all the required ops files
+REPO_LOCATION=cloudfoundry-cf-deployment-$(cat ${GITHUB_RELEASE_LOCATION}/commit_sha | cut -c 1-7 )
 bosh int ${REPO_LOCATION}/cf-deployment.yml \
   -o ${REPO_LOCATION}/operations/enable-nfs-volume-service.yml \
   -o ${REPO_LOCATION}/operations/use-compiled-releases.yml \
   -o ${REPO_LOCATION}/operations/backup-and-restore/enable-backup-restore.yml \
   -o ${OPS_FOLDER}/remove_buildpacks.yml >> manifest.yml
 
-source ${FETCH_SCRIPT} manifest.yml ${OUTPUT_FOLDER}
+echo Fetching releases
+source ${FETCH_SCRIPT} manifest.yml ${RELEASE_FOLDER}
 
-# Get the stemcell
+if [ -f ${GITHUB_RELEASE_LOCATION}/body ]; then
+  echo Copying release notes
+  cp ${GITHUB_RELEASE_LOCATION}/body ${RELEASE_FOLDER}/cf-deployment-$(cat ${GITHUB_RELEASE_LOCATION}/version)-release.md
+fi
+
+echo Fetching the stemcell
 STEMCELL_OS=$(bosh int manifest.yml --path /stemcells/alias=default/os)
 STEMCELL_VERSION=$(bosh int manifest.yml --path /stemcells/alias=default/version)
 
