@@ -21,6 +21,6 @@ source ${FETCH_SCRIPT} manifest.yml ${OUTPUT_FOLDER}
 
 STEMCELL_URL=$(bosh int manifest.yml --path /resource_pools/name=vms/stemcell/url)
 
-pushd ${STEMCELL_FOLDER}
+pushd ${STEMCELL_FOLDER} > /dev/null
 curl -LOJ ${STEMCELL_URL}
-popd
+popd > /dev/null

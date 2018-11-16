@@ -7,16 +7,17 @@ OUTPUT_FOLDER=$2
 
 URLS="$(bosh int ${MANIFEST} --path /releases | grep url | awk '{split($0,a,"url:"); print a[2]}')"
 
-pushd ${OUTPUT_FOLDER}
+pushd ${OUTPUT_FOLDER} > /dev/null
 
 for URL in ${URLS}
 do
-    curl -LOJ ${URL}
+  echo Downloading artifact: ${URL}
+  curl --silent -LOJ ${URL}
 done
 # Fix curl leaving url parameters in filename
 if test -e `echo *.tgz\?* | cut -d' ' -f1`
 then
-    for file in *.tgz\?*; do mv "$file" "${file%%\?*}"; done
+  for file in *.tgz\?*; do mv "$file" "${file%%\?*}"; done
 fi
 
-popd
+popd > /dev/null

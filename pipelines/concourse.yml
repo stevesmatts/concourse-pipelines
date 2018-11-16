@@ -1,10 +1,5 @@
 ---
 resource_types:
-- name: rsync-resource
-  type: docker-image
-  source:
-    repository: mrsixw/concourse-rsync-resource
-    tag: latest
 - name: slack-notification
   type: docker-image
   source:
@@ -22,14 +17,6 @@ resources:
   source:
     uri: https://github.com/concourse/concourse-bosh-deployment.git
     tag_filter: v*
-- name: transfer-releases
-  type: rsync-resource
-  source:
-    server: ((rsync_server))
-    base_dir: /data/repo/bosh/release
-    user : ((rsync_user))
-    private_key: ((rsync_key))
-    disable_version_path: true
 - name: notify
   type: slack-notification
   source:
@@ -45,7 +32,7 @@ jobs:
     - get: pipelines-repo
     - get: concourse-deployment-repo
       trigger: true
-    - task: fetch-concourse
+    - task: process-concourse
       config:
         platform: linux
         image_resource:
@@ -54,20 +41,31 @@ jobs:
         inputs:
         - name: pipelines-repo
         - name: concourse-deployment-repo
-          path: incoming-repo
         outputs:
         - name: releases
         run:
-          path: pipelines-repo/scripts/process-concourse-repo-update.sh
+          path: pipelines-repo/scripts/process-concourse-deployment-repo.sh
           args:
-          - incoming-repo
-          - releases
+          - concourse-deployment-repo
           - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
-    - put: transfer-releases
-      params: {
-        "sync_dir": "releases",
-        "rsync_opts": ["-Pav", "--ignore-existing"]
-      }
+          - releases
+    - task: transfer-releases
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: releases
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - releases
+          - /data/repo/bosh/release
     on_failure:
       put: notify
       params:
