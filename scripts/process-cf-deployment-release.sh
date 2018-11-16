@@ -27,10 +27,11 @@ if [ -f ${GITHUB_RELEASE_LOCATION}/body ]; then
   cp ${GITHUB_RELEASE_LOCATION}/body ${RELEASE_FOLDER}/cf-deployment-$(cat ${GITHUB_RELEASE_LOCATION}/version)-release.md
 fi
 
-echo Fetching the stemcell
 STEMCELL_OS=$(bosh int manifest.yml --path /stemcells/alias=default/os)
 STEMCELL_VERSION=$(bosh int manifest.yml --path /stemcells/alias=default/version)
 
-pushd ${STEMCELL_FOLDER}
-curl -LOJ https://bosh.io/d/stemcells/bosh-vsphere-esxi-${STEMCELL_OS}-go_agent?v=${STEMCELL_VERSION}
-popd
+echo Fetching the stemcell ${STEMCELL_OS}/${STEMCELL_VERSION}
+
+pushd ${STEMCELL_FOLDER} > /dev/null
+curl --silent -LOJ https://bosh.io/d/stemcells/bosh-vsphere-esxi-${STEMCELL_OS}-go_agent?v=${STEMCELL_VERSION}
+popd > /dev/null
