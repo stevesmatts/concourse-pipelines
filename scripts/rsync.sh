@@ -18,6 +18,6 @@ CMD="ssh -i ~/.ssh/server_key ${USERNAME}@${SERVER} mkdir -p ${OUTPUT_DIRECTORY}
 echo ${CMD} 1>&2
 eval ${CMD} 1>&2
 
-RSYNC_CMD="rsync -av -e 'ssh -i ~/.ssh/server_key' ./${INCOMING_DIRECTORY}/ ${USERNAME}@${SERVER}:${OUTPUT_DIRECTORY}"
+RSYNC_CMD="rsync -av --size-only -e 'ssh -i ~/.ssh/server_key' ./${INCOMING_DIRECTORY}/ ${USERNAME}@${SERVER}:${OUTPUT_DIRECTORY}"
 echo ${RSYNC_CMD} 1>&2
 eval ${RSYNC_CMD} 1>&2
