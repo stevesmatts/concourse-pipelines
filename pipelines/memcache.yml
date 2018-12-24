@@ -11,7 +11,7 @@ resources:
   type: git
   source:
     uri: https://github.com/trecnoc/concourse-pipelines.git
-    branch: Memcache_rsync
+    branch: master
 - name: memcache-boshrelease
   type: bosh-io-release
   source:

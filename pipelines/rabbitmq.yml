@@ -1,10 +1,5 @@
 ---
 resource_types:
-- name: rsync-resource
-  type: docker-image
-  source:
-    repository: mrsixw/concourse-rsync-resource
-    tag: latest
 - name: slack-notification
   type: docker-image
   source:
@@ -29,14 +24,6 @@ resources:
   type: bosh-io-release
   source:
     repository: bosh-packages/cf-cli-release
-- name: transfer-releases
-  type: rsync-resource
-  source:
-    server: ((rsync_server))
-    base_dir: /data/repo/bosh/release
-    user : ((rsync_user))
-    private_key: ((rsync_key))
-    disable_version_path: true
 - name: notify
   type: slack-notification
   source:
@@ -56,7 +43,7 @@ jobs:
       trigger: true
     - get: cf-cli-release
       trigger: true
-    - task: fetch-rabbitmq
+    - task: process-rabbitmq
       config:
         platform: linux
         image_resource:
@@ -65,66 +52,35 @@ jobs:
         inputs:
         - name: pipelines-repo
         - name: cf-rabbitmq-release
-          path: incoming-release
-        outputs:
-        - name: release
-        run:
-          path: pipelines-repo/scripts/copy-bosh-io-release.sh
-          args:
-          - incoming-release
-          - release
-          - cf-rabbitmq-release
-    - put: transfer-releases
-      params: {
-        "sync_dir" : "release",
-        "rsync_opts" : ["-Pav", "--ignore-existing"]
-      }
-    - task: fetch-rabbitmq-broker
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
         - name: cf-rabbitmq-multitenant-broker-release
-          path: incoming-release
+        - name: cf-cli-release
         outputs:
-        - name: release
+        - name: releases
         run:
-          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          path: pipelines-repo/scripts/process-rabbitmq.sh
           args:
-          - incoming-release
-          - release
+          - pipelines-repo/scripts/copy-bosh-io-release.sh
+          - cf-rabbitmq-release
           - cf-rabbitmq-multitenant-broker-release
-    - put: transfer-releases
-      params: {
-        "sync_dir" : "release",
-        "rsync_opts" : ["-Pav", "--ignore-existing"]
-      }
-    - task: fetch-cf-cli
+          - cf-cli-release
+          - releases
+    - task: transfer-releases
       config:
         platform: linux
         image_resource:
           type: docker-image
-          source: {repository: starkandwayne/concourse}
+          source: {repository: trecnoc/concourse-rsync}
         inputs:
         - name: pipelines-repo
-        - name: cf-cli-release
-          path: incoming-release
-        outputs:
-        - name: release
+        - name: releases
         run:
-          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          path: pipelines-repo/scripts/rsync.sh
           args:
-          - incoming-release
-          - release
-          - cf-cli-release
-    - put: transfer-releases
-      params: {
-        "sync_dir" : "release",
-        "rsync_opts" : ["-Pav", "--ignore-existing"]
-      }
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - releases
+          - /data/repo/bosh/release
     on_failure:
       put: notify
       params:
