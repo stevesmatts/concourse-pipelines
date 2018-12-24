@@ -2,8 +2,8 @@
 
 set -e
 
-REPO_LOCATION=$1
-FETCH_SCRIPT=$2
+FETCH_SCRIPT=$1
+REPO_LOCATION=$2
 RELEASE_FOLDER=$3
 
 echo Generate a manifest with all the required ops files

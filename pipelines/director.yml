@@ -45,10 +45,10 @@ jobs:
         - name: releases
         - name: stemcells
         run:
-          path: pipelines-repo/scripts/process-bosh-repo.sh
+          path: pipelines-repo/scripts/process-bosh-deployment-repo.sh
           args:
-          - bosh-deployment-repo
           - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
+          - bosh-deployment-repo
           - releases
           - stemcells
     - task: transfer-releases

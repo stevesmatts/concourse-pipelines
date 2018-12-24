@@ -124,7 +124,7 @@ jobs:
         outputs:
         - name: outgoing-artifacts
         run:
-          path: pipelines-repo/scripts/collect-buildpacks.sh
+          path: pipelines-repo/scripts/process-buildpacks.sh
           args:
           - outgoing-artifacts
     - task: transfer-artifacts
