@@ -46,8 +46,8 @@ jobs:
         run:
           path: pipelines-repo/scripts/process-concourse-deployment-repo.sh
           args:
-          - concourse-deployment-repo
           - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
+          - concourse-deployment-repo
           - releases
     - task: transfer-releases
       config:

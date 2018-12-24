@@ -50,8 +50,8 @@ jobs:
         run:
           path: pipelines-repo/scripts/process-cf-deployment-release.sh
           args:
-          - cf-deployment
           - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
+          - cf-deployment
           - pipelines-repo/scripts/ops_files
           - releases
           - stemcells
