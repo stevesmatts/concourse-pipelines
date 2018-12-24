@@ -1,10 +1,5 @@
 ---
 resource_types:
-- name: rsync-resource
-  type: docker-image
-  source:
-    repository: mrsixw/concourse-rsync-resource
-    tag: latest
 - name: slack-notification
   type: docker-image
   source:
@@ -22,22 +17,6 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/bosh-deployment.git
     branch: master
-- name: transfer-releases
-  type: rsync-resource
-  source:
-    server: ((rsync_server))
-    base_dir: /data/repo/bosh/release
-    user : ((rsync_user))
-    private_key: ((rsync_key))
-    disable_version_path: true
-- name: transfer-stemcells
-  type: rsync-resource
-  source:
-    server: ((rsync_server))
-    base_dir: /data/repo/bosh/stemcell
-    user : ((rsync_user))
-    private_key: ((rsync_key))
-    disable_version_path: true
 - name: notify
   type: slack-notification
   source:
@@ -53,7 +32,7 @@ jobs:
     - get: pipelines-repo
     - get: bosh-deployment-repo
       trigger: true
-    - task: fetch-director
+    - task: process-director
       config:
         platform: linux
         image_resource:
@@ -62,27 +41,50 @@ jobs:
         inputs:
         - name: pipelines-repo
         - name: bosh-deployment-repo
-          path: incoming-repo
         outputs:
         - name: releases
         - name: stemcells
         run:
-          path: pipelines-repo/scripts/process-bosh-repo-update.sh
+          path: pipelines-repo/scripts/process-bosh-repo.sh
           args:
-          - incoming-repo
-          - releases
+          - bosh-deployment-repo
           - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
+          - releases
           - stemcells
-    - put: transfer-releases
-      params: {
-        "sync_dir": "releases",
-        "rsync_opts": ["-Pav", "--ignore-existing"]
-      }
-    - put: transfer-stemcells
-      params: {
-        "sync_dir": "stemcells",
-        "rsync_opts": ["-Pav", "--ignore-existing"]
-      }
+    - task: transfer-releases
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: releases
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - releases
+          - /data/repo/bosh/release
+    - task: transfer-stemcells
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: stemcells
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - stemcells
+          - /data/repo/bosh/stemcell
     on_failure:
       put: notify
       params:
