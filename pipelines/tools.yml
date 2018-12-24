@@ -1,10 +1,5 @@
 ---
 resource_types:
-- name: rsync-resource
-  type: docker-image
-  source:
-    repository: mrsixw/concourse-rsync-resource
-    tag: latest
 - name: slack-notification
   type: docker-image
   source:
@@ -23,84 +18,36 @@ resources:
     owner: cloudfoundry
     repository: bosh-cli
     access_token: ((github_access_token))
-- name: transfer-bosh-cli
-  type: rsync-resource
-  source:
-    server: ((rsync_server))
-    base_dir: /data/repo/bosh
-    user : ((rsync_user))
-    private_key: ((rsync_key))
-    disable_version_path: true
 - name: cf-cli-release
   type: github-release
   source:
     owner: cloudfoundry
     repository: cli
     access_token: ((github_access_token))
-- name: transfer-cf-cli
-  type: rsync-resource
-  source:
-    server: ((rsync_server))
-    base_dir: /data/repo/cf_cli
-    user : ((rsync_user))
-    private_key: ((rsync_key))
-    disable_version_path: true
 - name: credhub-cli-release
   type: github-release
   source:
     owner: cloudfoundry-incubator
     repository: credhub-cli
     access_token: ((github_access_token))
-- name: transfer-credhub-cli
-  type: rsync-resource
-  source:
-    server: ((rsync_server))
-    base_dir: /data/repo/bosh/credhub
-    user : ((rsync_user))
-    private_key: ((rsync_key))
-    disable_version_path: true
 - name: bbr-release
   type: github-release
   source:
     owner: cloudfoundry-incubator
     repository: bosh-backup-and-restore
     access_token: ((github_access_token))
-- name: transfer-bbr
-  type: rsync-resource
-  source:
-    server: ((rsync_server))
-    base_dir: /data/repo/bosh/bbr
-    user : ((rsync_user))
-    private_key: ((rsync_key))
-    disable_version_path: true
 - name: mc-release
   type: github-release
   source:
     owner: minio
     repository: mc
     access_token: ((github_access_token))
-- name: transfer-mc
-  type: rsync-resource
-  source:
-    server: ((rsync_server))
-    base_dir: /data/repo/minio
-    user : ((rsync_user))
-    private_key: ((rsync_key))
-    disable_version_path: true
 - name: cf-mgmt-release
   type: github-release
   source:
     owner: pivotalservices
     repository: cf-mgmt
     access_token: ((github_access_token))
-- name: transfer-cf-mgmt
-  type: rsync-resource
-  source:
-    server: ((rsync_server))
-    base_dir: /data/repo/bosh/cf-mgmt
-    user : ((rsync_user))
-    private_key: ((rsync_key))
-    disable_version_path: true
 - name: notify
   type: slack-notification
   source:
@@ -138,7 +85,7 @@ jobs:
       params:
         globs:
         - "*-linux"
-    - task: fetch-bosh-cli
+    - task: process-tools
       config:
         platform: linux
         image_resource:
@@ -147,132 +94,130 @@ jobs:
         inputs:
         - name: pipelines-repo
         - name: bosh-cli-release
-          path: incoming-release
-        outputs:
-        - name: release
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - incoming-release
-          - release
-          - bosh-cli
-    - put: transfer-bosh-cli
-      params: {
-        "sync_dir": "release",
-        "rsync_opts": ["-Pav", "--ignore-existing"]
-      }
-    - task: fetch-cf-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
         - name: cf-cli-release
-          path: incoming-release
-        outputs:
-        - name: release
-        run:
-          path: pipelines-repo/scripts/fetch-cf-cli-release.sh
-          args:
-          - incoming-release
-          - release
-    - put: transfer-cf-cli
-      params: {
-        "sync_dir": "release",
-        "rsync_opts": ["-Pav", "--ignore-existing"]
-      }
-    - task: fetch-credhub-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
         - name: credhub-cli-release
-          path: incoming-release
-        outputs:
-        - name: release
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - incoming-release
-          - release
-          - credhub
-    - put: transfer-credhub-cli
-      params: {
-        "sync_dir": "release",
-        "rsync_opts": ["-Pav", "--ignore-existing"]
-      }
-    - task: fetch-bbr
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
         - name: bbr-release
-          path: incoming-release
-        outputs:
-        - name: release
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - incoming-release
-          - release
-          - bbr
-    - put: transfer-bbr
-      params: {
-        "sync_dir": "release",
-        "rsync_opts": ["-Pav", "--ignore-existing"]
-      }
-    - task: fetch-mc
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
         - name: mc-release
-          path: incoming-release
+        - name: cf-mgmt-release
         outputs:
-        - name: release
+        - name: bosh-cli
+        - name: cf-cli
+        - name: credhub-cli
+        - name: bbr-cli
+        - name: mc-cli
+        - name: cf-mgmt-cli
         run:
-          path: pipelines-repo/scripts/fetch-mc-release.sh
+          path: pipelines-repo/scripts/process-tools.sh
           args:
-          - incoming-release
-          - release
-    - put: transfer-mc
-      params: {
-        "sync_dir": "release",
-        "rsync_opts": ["-Pav", "--ignore-existing"]
-      }
-    - task: fetch-cf-mgmt
+          - pipelines-repo/scripts/copy-github-release.sh
+          - bosh-cli-release
+          - cf-cli-release
+          - credhub-cli-release
+          - bbr-release
+          - mc-release
+          - cf-mgmt-release
+    - task: transfer-bosh-cli
       config:
         platform: linux
         image_resource:
           type: docker-image
-          source: {repository: starkandwayne/concourse}
+          source: {repository: trecnoc/concourse-rsync}
         inputs:
         - name: pipelines-repo
-        - name: cf-mgmt-release
-          path: incoming-release
-        outputs:
-        - name: release
+        - name: bosh-cli
         run:
-          path: pipelines-repo/scripts/copy-cf-mgmt-release.sh
+          path: pipelines-repo/scripts/rsync.sh
           args:
-          - incoming-release
-          - release
-    - put: transfer-cf-mgmt
-      params: {
-        "sync_dir": "release",
-        "rsync_opts": ["-Pav", "--ignore-existing"]
-      }
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - bosh-cli
+          - /data/repo/bosh
+    - task: transfer-cf-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: cf-cli
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - cf-cli
+          - /data/repo/cf_cli
+    - task: transfer-credhub-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: credhub-cli
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - credhub-cli
+          - /data/repo/bosh/credhub
+    - task: transfer-bbr-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: bbr-cli
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - bbr-cli
+          - /data/repo/bosh/bbr
+    - task: transfer-mc-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: mc-cli
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - mc-cli
+          - /data/repo/minio
+    - task: transfer-cf-mgmt-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: cf-mgmt-cli
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - cf-mgmt-cli
+          - /data/repo/bosh/cf-mgmt
     on_failure:
       put: notify
       params:
