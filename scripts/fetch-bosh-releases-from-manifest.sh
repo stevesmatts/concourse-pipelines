@@ -12,7 +12,7 @@ pushd ${OUTPUT_FOLDER} > /dev/null
 for URL in ${URLS}
 do
   echo Downloading artifact: ${URL}
-  curl --silent -LOJ --retry 5 ${URL}
+  curl -vv -LOJ --retry 5 ${URL}
 done
 # Fix curl leaving url parameters in filename
 if test -e `echo *.tgz\?* | cut -d' ' -f1`
