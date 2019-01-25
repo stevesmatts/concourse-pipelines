@@ -25,8 +25,8 @@ source ${GITHUB_RELEASE_SCRIPT} ${BOSH_CLI_SOURCE} ${BOSH_CLI_OUTPUT} bosh-cli
 
 # Process CF CLI
 echo Processing CF CLI ${CF_CLI_VERSION} windows and linux client
-curl --silent -Lo ${CF_CLI_OUTPUT}/cf-cli-installer_${CF_CLI_VERSION}_x86-64.rpm "https://packages.cloudfoundry.org/stable?release=redhat64&version=${CF_CLI_VERSION}&source=github-rel"
-curl --silent -Lo ${CF_CLI_OUTPUT}/cf-cli-installer_${CF_CLI_VERSION}_winx64.zip "https://packages.cloudfoundry.org/stable?release=windows64&version=${CF_CLI_VERSION}&source=github-rel"
+curl --silent -Lo --retry 5 ${CF_CLI_OUTPUT}/cf-cli-installer_${CF_CLI_VERSION}_x86-64.rpm "https://packages.cloudfoundry.org/stable?release=redhat64&version=${CF_CLI_VERSION}&source=github-rel"
+curl --silent -Lo --retry 5 ${CF_CLI_OUTPUT}/cf-cli-installer_${CF_CLI_VERSION}_winx64.zip "https://packages.cloudfoundry.org/stable?release=windows64&version=${CF_CLI_VERSION}&source=github-rel"
 if [ -f ${CF_CLI_SOURCE}/body ]; then
   echo Processing CF CLI ${CF_CLI_VERSION} release notes
   cp ${CF_CLI_SOURCE}/body ${CF_CLI_OUTPUT}/cf-cli-${CF_CLI_VERSION}-release.md
@@ -40,8 +40,8 @@ source ${GITHUB_RELEASE_SCRIPT} ${BBR_CLI_SOURCE} ${BBR_CLI_OUTPUT} bbr
 
 # Process MC
 echo Processing MC CLI ${MC_CLI_VERSION} windows and linux client
-curl --silent -Lo ${MC_CLI_OUTPUT}/mc-${MC_CLI_VERSION} "https://dl.minio.io/client/mc/release/linux-amd64/mc"
-curl --silent -Lo ${MC_CLI_OUTPUT}/mc-${MC_CLI_VERSION}.exe "https://dl.minio.io/client/mc/release/windows-amd64/mc.exe"
+curl --silent -Lo --retry 5 ${MC_CLI_OUTPUT}/mc-${MC_CLI_VERSION} "https://dl.minio.io/client/mc/release/linux-amd64/mc"
+curl --silent -Lo --retry 5 ${MC_CLI_OUTPUT}/mc-${MC_CLI_VERSION}.exe "https://dl.minio.io/client/mc/release/windows-amd64/mc.exe"
 if [ -f ${MC_CLI_SOURCE}/body ]; then
   echo Processing MC CLI ${MC_CLI_VERSION} release notes
   cp ${MC_CLI_SOURCE}/body ${MC_CLI_OUTPUT}/mc-${MC_CLI_VERSION}-release.md

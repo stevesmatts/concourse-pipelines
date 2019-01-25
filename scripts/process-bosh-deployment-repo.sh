@@ -24,5 +24,5 @@ STEMCELL_URL=$(bosh int manifest.yml --path /resource_pools/name=vms/stemcell/ur
 
 pushd ${STEMCELL_FOLDER} > /dev/null
 echo Fetching the stemcell ${STEMCELL_URL}
-curl --silent -LOJ ${STEMCELL_URL}
+curl --silent -LOJ --retry 5 ${STEMCELL_URL}
 popd > /dev/null
