@@ -33,5 +33,5 @@ STEMCELL_VERSION=$(bosh int manifest.yml --path /stemcells/alias=default/version
 echo Fetching the stemcell ${STEMCELL_OS}/${STEMCELL_VERSION}
 
 pushd ${STEMCELL_FOLDER} > /dev/null
-curl --silent -LOJ https://bosh.io/d/stemcells/bosh-vsphere-esxi-${STEMCELL_OS}-go_agent?v=${STEMCELL_VERSION}
+curl --silent -LOJ --retry 5 https://bosh.io/d/stemcells/bosh-vsphere-esxi-${STEMCELL_OS}-go_agent?v=${STEMCELL_VERSION}
 popd > /dev/null
