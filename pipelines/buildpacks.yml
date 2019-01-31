@@ -21,56 +21,47 @@ resources:
   type: pivnet
   source:
     api_token: ((pivnet_token))
-    product_slug: buildpacks
-    product_version: .NET Core.*\d+\.\d+\.\d+
+    product_slug: dotnet-core-buildpack
 - name: binary-buildpack
   type: pivnet
   source:
     api_token: ((pivnet_token))
-    product_slug: buildpacks
-    product_version: Binary.*\d+\.\d+\.\d+
+    product_slug: binary-buildpack
 - name: go-buildpack
   type: pivnet
   source:
     api_token: ((pivnet_token))
-    product_slug: buildpacks
-    product_version: Go.*\d+\.\d+\.\d+
+    product_slug: go-buildpack
 - name: java-buildpack
   type: pivnet
   source:
     api_token: ((pivnet_token))
-    product_slug: buildpacks
-    product_version: Java.*\d+\.\d+\.\d+
+    product_slug: java-buildpack
 - name: nodejs-buildpack
   type: pivnet
   source:
     api_token: ((pivnet_token))
-    product_slug: buildpacks
-    product_version: NodeJS.*\d+\.\d+\.\d+
+    product_slug: nodejs-buildpack
 - name: php-buildpack
   type: pivnet
   source:
     api_token: ((pivnet_token))
-    product_slug: buildpacks
-    product_version: PHP.*\d+\.\d+\.\d+
+    product_slug: php-buildpack
 - name: python-buildpack
   type: pivnet
   source:
     api_token: ((pivnet_token))
-    product_slug: buildpacks
-    product_version: Python.*\d+\.\d+\.\d+
+    product_slug: python-buildpack
 - name: ruby-buildpack
   type: pivnet
   source:
     api_token: ((pivnet_token))
-    product_slug: buildpacks
-    product_version: Ruby.*\d+\.\d+\.\d+
+    product_slug: ruby-buildpack
 - name: staticfile-buildpack
   type: pivnet
   source:
     api_token: ((pivnet_token))
-    product_slug: buildpacks
-    product_version: Staticfile.*\d+\.\d+\.\d+
+    product_slug: staticfile-buildpack
 - name: notify
   type: slack-notification
   source:
@@ -86,24 +77,40 @@ jobs:
     - get: pipelines-repo
     - get: dotnet-buildpack
       trigger: true
+      params:
+        globs: ["*cflinuxfs2*.zip"]
     - get: binary-buildpack
       trigger: true
+      params:
+        globs: ["*cflinuxfs2*.zip"]
     - get: go-buildpack
       trigger: true
+      params:
+        globs: ["*cflinuxfs2*.zip"]
     - get: java-buildpack
       trigger: true
       params:
         globs: ["*offline*.zip"]
     - get: nodejs-buildpack
       trigger: true
+      params:
+        globs: ["*cflinuxfs2*.zip"]
     - get: php-buildpack
       trigger: true
+      params:
+        globs: ["*cflinuxfs2*.zip"]
     - get: python-buildpack
       trigger: true
+      params:
+        globs: ["*cflinuxfs2*.zip"]
     - get: ruby-buildpack
       trigger: true
+      params:
+        globs: ["*cflinuxfs2*.zip"]
     - get: staticfile-buildpack
       trigger: true
+      params:
+        globs: ["*cflinuxfs2*.zip"]
     - task: collect-buildpacks
       config:
         platform: linux
