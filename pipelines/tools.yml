@@ -18,12 +18,6 @@ resources:
     owner: cloudfoundry
     repository: bosh-cli
     access_token: ((github_access_token))
-- name: cf-cli-release
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: cli
-    access_token: ((github_access_token))
 - name: credhub-cli-release
   type: github-release
   source:
@@ -66,8 +60,6 @@ jobs:
       params:
         globs:
         - "bosh-cli-*-linux-amd64"
-    - get: cf-cli-release
-      trigger: true
     - get: credhub-cli-release
       trigger: true
       params:
@@ -94,14 +86,12 @@ jobs:
         inputs:
         - name: pipelines-repo
         - name: bosh-cli-release
-        - name: cf-cli-release
         - name: credhub-cli-release
         - name: bbr-release
         - name: mc-release
         - name: cf-mgmt-release
         outputs:
         - name: bosh-cli
-        - name: cf-cli
         - name: credhub-cli
         - name: bbr-cli
         - name: mc-cli
@@ -111,7 +101,6 @@ jobs:
           args:
           - pipelines-repo/scripts/copy-github-release.sh
           - bosh-cli-release
-          - cf-cli-release
           - credhub-cli-release
           - bbr-release
           - mc-release
@@ -133,23 +122,6 @@ jobs:
           - ((rsync_key_base64))
           - bosh-cli
           - /data/repo/bosh
-    - task: transfer-cf-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-cli
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - cf-cli
-          - /data/repo/cf_cli
     - task: transfer-credhub-cli
       config:
         platform: linux

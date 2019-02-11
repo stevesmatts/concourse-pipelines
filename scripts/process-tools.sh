@@ -6,31 +6,19 @@ set -o pipefail
 GITHUB_RELEASE_SCRIPT=$1
 BOSH_CLI_SOURCE=$2
 BOSH_CLI_OUTPUT=bosh-cli
-CF_CLI_SOURCE=$3
-CF_CLI_OUTPUT=cf-cli
-CF_CLI_VERSION=$(cat ${CF_CLI_SOURCE}/version)
-CREDHUB_CLI_SOURCE=$4
+CREDHUB_CLI_SOURCE=$3
 CREDHUB_CLI_OUTPUT=credhub-cli
-BBR_CLI_SOURCE=$5
+BBR_CLI_SOURCE=$4
 BBR_CLI_OUTPUT=bbr-cli
-MC_CLI_SOURCE=$6
+MC_CLI_SOURCE=$5
 MC_CLI_OUTPUT=mc-cli
 MC_CLI_VERSION=$(cat ${MC_CLI_SOURCE}/version)
-CF_MGMT_CLI_SOURCE=$7
+CF_MGMT_CLI_SOURCE=$6
 CF_MGMT_CLI_OUTPUT=cf-mgmt-cli
 CF_MGMT_CLI_VERSION=$(cat ${CF_MGMT_CLI_SOURCE}/version)
 
 # Process BOSH CLI
 source ${GITHUB_RELEASE_SCRIPT} ${BOSH_CLI_SOURCE} ${BOSH_CLI_OUTPUT} bosh-cli
-
-# Process CF CLI
-echo Processing CF CLI ${CF_CLI_VERSION} windows and linux client
-curl --silent --retry 5 -Lo ${CF_CLI_OUTPUT}/cf-cli-installer_${CF_CLI_VERSION}_x86-64.rpm "https://packages.cloudfoundry.org/stable?release=redhat64&version=${CF_CLI_VERSION}&source=github-rel"
-curl --silent --retry 5 -Lo ${CF_CLI_OUTPUT}/cf-cli-installer_${CF_CLI_VERSION}_winx64.zip "https://packages.cloudfoundry.org/stable?release=windows64&version=${CF_CLI_VERSION}&source=github-rel"
-if [ -f ${CF_CLI_SOURCE}/body ]; then
-  echo Processing CF CLI ${CF_CLI_VERSION} release notes
-  cp ${CF_CLI_SOURCE}/body ${CF_CLI_OUTPUT}/cf-cli-${CF_CLI_VERSION}-release.md
-fi
 
 # Process CREDHUB CLI
 source ${GITHUB_RELEASE_SCRIPT} ${CREDHUB_CLI_SOURCE} ${CREDHUB_CLI_OUTPUT} credhub
