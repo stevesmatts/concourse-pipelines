@@ -11,12 +11,36 @@ resources:
   type: git
   source:
     uri: https://github.com/trecnoc/concourse-pipelines.git
-    branch: Split_Tools_CF_Cli
+    branch: master
 - name: cf-cli-release
   type: github-release
   source:
     owner: cloudfoundry
     repository: cli
+    access_token: ((github_access_token))
+- name: antifreeze-release
+  type: github-release
+  source:
+    owner: odlp
+    repository: antifreeze
+    access_token: ((github_access_token))
+- name: autopilot-release
+  type: github-release
+  source:
+    owner: contraband
+    repository: autopilot
+    access_token: ((github_access_token))
+- name: cf-bpck-mngt-release
+  type: github-release
+  source:
+    owner: davidehringer
+    repository: cf-buildpack-management-plugin
+    access_token: ((github_access_token))
+- name: cf-top-release
+  type: github-release
+  source:
+    owner: ECSTeam
+    repository: cloudfoundry-top-plugin
     access_token: ((github_access_token))
 - name: notify
   type: slack-notification
@@ -33,6 +57,30 @@ jobs:
     - get: pipelines-repo
     - get: cf-cli-release
       trigger: true
+    - get: antifreeze-release
+      trigger: true
+      params:
+        globs:
+          - antifreeze-linux
+          - antifreeze.exe
+    - get: autopilot-release
+      trigger: true
+      params:
+        globs:
+          - autopilot-linux
+          - autopilot.exe
+    - get: cf-bpck-mngt-release
+      trigger: true
+      params:
+        globs:
+          - cf-buildpack-management-plugin_linux_amd64
+          - cf-buildpack-management-plugin_windows_amd64.exe
+    - get: cf-top-release
+      trigger: true
+      params:
+        globs:
+          - top-plugin-linux64
+          - top-plugin64.exe
     - task: process-cf-cli
       config:
         platform: linux
@@ -42,6 +90,10 @@ jobs:
         inputs:
         - name: pipelines-repo
         - name: cf-cli-release
+        - name: antifreeze-release
+        - name: autopilot-release
+        - name: cf-bpck-mngt-release
+        - name: cf-top-release
         outputs:
         - name: cf-cli
         run:
@@ -50,6 +102,10 @@ jobs:
           - pipelines-repo/scripts/copy-github-release.sh
           - cf-cli
           - cf-cli-release
+          - antifreeze-release
+          - autopilot-release
+          - cf-bpck-mngt-release
+          - cf-top-release
     - task: transfer-cf-cli
       config:
         platform: linux
