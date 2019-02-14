@@ -68,12 +68,10 @@ jobs:
     on_failure:
       put: notify
       params:
-        username: $BUILD_PIPELINE_NAME
         icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new releases
+        text: Failed to process new Mattermost release
     on_success:
       put: notify
       params:
-        username: $BUILD_PIPELINE_NAME
         icon_emoji: ":thumbsup:"
-        text: Successfully processed new releases
+        text: Successfully processed new Mattermost release
