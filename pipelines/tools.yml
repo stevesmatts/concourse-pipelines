@@ -195,10 +195,10 @@ jobs:
       params:
         username: $BUILD_PIPELINE_NAME
         icon_emoji: ":skull_and_crossbones:"
-        text: $BUILD_JOB_NAME job failed
+        text: Failed to process new releases
     on_success:
       put: notify
       params:
         username: $BUILD_PIPELINE_NAME
         icon_emoji: ":thumbsup:"
-        text: $BUILD_JOB_NAME job succeeded
+        text: Successfully processed new releases
