@@ -17,6 +17,10 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/bosh-deployment.git
     branch: master
+- name: bosh-dns-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry/bosh-dns-release
 - name: notify
   type: slack-notification
   source:
@@ -32,6 +36,8 @@ jobs:
     - get: pipelines-repo
     - get: bosh-deployment-repo
       trigger: true
+    - get: bosh-dns-release
+      trigger: true
     - task: process-director
       config:
         platform: linux
@@ -41,6 +47,7 @@ jobs:
         inputs:
         - name: pipelines-repo
         - name: bosh-deployment-repo
+        - name: bosh-dns-release
         outputs:
         - name: releases
         - name: stemcells
@@ -51,6 +58,8 @@ jobs:
           - bosh-deployment-repo
           - releases
           - stemcells
+          - pipelines-repo/scripts/copy-bosh-io-release.sh
+          - bosh-dns-release
     - task: transfer-releases
       config:
         platform: linux
