@@ -1,0 +1,138 @@
+---
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
+
+resources:
+- name: pipelines-repo
+  type: git
+  source:
+    uri: https://github.com/trecnoc/concourse-pipelines.git
+    branch: master
+- name: doomsday-cli-release
+  type: github-release
+  source:
+    owner: doomsday-project
+    repository: doomsday
+    access_token: ((github_access_token))
+- name: doomsday-bosh-release
+  type: github-release
+  source:
+    owner: doomsday-project
+    repository: doomsday-boshrelease
+    access_token: ((github_access_token))
+- name: notify
+  type: slack-notification
+  source:
+    url: ((slack_hook))
+    disable: ((slack_disabled))
+
+jobs:
+- name: fetch-cli
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: doomsday-cli-release
+      trigger: true
+      params:
+        globs:
+          - doomsday-linux
+    - task: process-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+          - name: pipelines-repo
+          - name: doomsday-cli-release
+        outputs:
+          - name: doomsday-cli
+        run:
+          path: pipelines-repo/scripts/process-doomsday-cli.sh
+          args:
+            - doomsday-cli-release
+            - doomsday-cli
+    - task: transfer-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+          - name: pipelines-repo
+          - name: doomsday-cli
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+            - ((rsync_server))
+            - ((rsync_user))
+            - ((rsync_key_base64))
+            - doomsday-cli
+            - /data/repo/bosh/doomsday
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Doomsday CLI release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Doomsday CLI release
+- name: fetch-bosh-release
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: doomsday-bosh-release
+      trigger: true
+    - task: process-bosh-release
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: doomsday-bosh-release
+        outputs:
+        - name: doomsday-bosh
+        run:
+          path: pipelines-repo/scripts/process-doomsday-bosh.sh
+          args:
+          - doomsday-bosh-release
+          - doomsday-bosh
+    - task: transfer-bosh-releases
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: doomsday-bosh
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - doomsday-bosh
+          - /data/repo/bosh/release
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Doomsday Bosh release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Doomsday Bosh release
