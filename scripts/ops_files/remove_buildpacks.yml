@@ -17,3 +17,7 @@
   path: /releases/name=ruby-buildpack
 - type: remove
   path: /releases/name=staticfile-buildpack
+- type: remove
+  path: /releases/name=r-buildpack
+- type: remove
+  path: /releases/name=nginx-buildpack
