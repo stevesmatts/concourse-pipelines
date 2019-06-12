@@ -12,10 +12,11 @@ resources:
   source:
     uri: https://github.com/trecnoc/concourse-pipelines.git
     branch: master
-- name: mysql-boshrelease
-  type: bosh-io-release
+- name: cf-mysql-deployment-repo
+  type: git
   source:
-    repository: cloudfoundry/cf-mysql-release
+    uri: https://github.com/cloudfoundry/cf-mysql-deployment.git
+    tag_filter: v*
 - name: notify
   type: slack-notification
   source:
@@ -29,7 +30,7 @@ jobs:
   plan:
   - do:
     - get: pipelines-repo
-    - get: mysql-boshrelease
+    - get: cf-mysql-deployment-repo
       trigger: true
     - task: process-mysql
       config:
@@ -39,14 +40,15 @@ jobs:
           source: {repository: starkandwayne/concourse}
         inputs:
         - name: pipelines-repo
-        - name: mysql-boshrelease
+        - name: cf-mysql-deployment-repo
         outputs:
         - name: releases
         run:
-          path: pipelines-repo/scripts/process-mysql.sh
+          path: pipelines-repo/scripts/process-cf-mysql-deployment-repo.sh
           args:
-          - pipelines-repo/scripts/copy-bosh-io-release.sh
-          - mysql-boshrelease
+          - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
+          - cf-mysql-deployment-repo
+          - pipelines-repo/scripts/ops_files
           - releases
     - task: transfer-releases
       config:
