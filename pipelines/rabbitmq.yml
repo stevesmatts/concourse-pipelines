@@ -20,10 +20,22 @@ resources:
   type: bosh-io-release
   source:
     repository: pivotal-cf/cf-rabbitmq-multitenant-broker-release
+- name: cf-rabbitmq-smoke-tests-release
+  type: bosh-io-release
+  source:
+    repository: pivotal-cf/cf-rabbitmq-smoke-tests-release
 - name: cf-cli-release
   type: bosh-io-release
   source:
     repository: bosh-packages/cf-cli-release
+- name: routing-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry-incubator/cf-routing-release
+- name: bpm-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry/bpm-release
 - name: notify
   type: slack-notification
   source:
@@ -41,7 +53,13 @@ jobs:
       trigger: true
     - get: cf-rabbitmq-multitenant-broker-release
       trigger: true
+    - get: cf-rabbitmq-smoke-tests-release
+      trigger: true
     - get: cf-cli-release
+      trigger: true
+    - get: routing-release
+      trigger: true
+    - get: bpm-release
       trigger: true
     - task: process-rabbitmq
       config:
@@ -53,7 +71,10 @@ jobs:
         - name: pipelines-repo
         - name: cf-rabbitmq-release
         - name: cf-rabbitmq-multitenant-broker-release
+        - name: cf-rabbitmq-smoke-tests-release
         - name: cf-cli-release
+        - name: routing-release
+        - name: bpm-release
         outputs:
         - name: releases
         run:
@@ -62,7 +83,10 @@ jobs:
           - pipelines-repo/scripts/copy-bosh-io-release.sh
           - cf-rabbitmq-release
           - cf-rabbitmq-multitenant-broker-release
+          - cf-rabbitmq-smoke-tests-release
           - cf-cli-release
+          - routing-release
+          - bpm-release
           - releases
     - task: transfer-releases
       config:
