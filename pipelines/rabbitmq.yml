@@ -51,16 +51,6 @@ jobs:
     - get: pipelines-repo
     - get: cf-rabbitmq-release
       trigger: true
-    - get: cf-rabbitmq-multitenant-broker-release
-      trigger: true
-    - get: cf-rabbitmq-smoke-tests-release
-      trigger: true
-    - get: cf-cli-release
-      trigger: true
-    - get: routing-release
-      trigger: true
-    - get: bpm-release
-      trigger: true
     - task: process-rabbitmq
       config:
         platform: linux
@@ -70,25 +60,15 @@ jobs:
         inputs:
         - name: pipelines-repo
         - name: cf-rabbitmq-release
-        - name: cf-rabbitmq-multitenant-broker-release
-        - name: cf-rabbitmq-smoke-tests-release
-        - name: cf-cli-release
-        - name: routing-release
-        - name: bpm-release
         outputs:
-        - name: releases
+        - name: rabbitmq-releases
         run:
-          path: pipelines-repo/scripts/process-rabbitmq.sh
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
           args:
-          - pipelines-repo/scripts/copy-bosh-io-release.sh
           - cf-rabbitmq-release
-          - cf-rabbitmq-multitenant-broker-release
-          - cf-rabbitmq-smoke-tests-release
-          - cf-cli-release
-          - routing-release
-          - bpm-release
-          - releases
-    - task: transfer-releases
+          - rabbitmq-releases
+          - cf-rabbitmq-release
+    - task: transfer-rabbitmq-releases
       config:
         platform: linux
         image_resource:
@@ -96,14 +76,14 @@ jobs:
           source: {repository: trecnoc/concourse-rsync}
         inputs:
         - name: pipelines-repo
-        - name: releases
+        - name: rabbitmq-releases
         run:
           path: pipelines-repo/scripts/rsync.sh
           args:
           - ((rsync_server))
           - ((rsync_user))
           - ((rsync_key_base64))
-          - releases
+          - rabbitmq-releases
           - /data/repo/bosh/release
     on_failure:
       put: notify
@@ -115,3 +95,291 @@ jobs:
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new RabbitMQ release
+- name: fetch-rabbitmq-broker
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: cf-rabbitmq-multitenant-broker-release
+      trigger: true
+    - task: process-rabbitmq-broker
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: cf-rabbitmq-multitenant-broker-release
+        outputs:
+        - name: broker-release
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          args:
+          - cf-rabbitmq-multitenant-broker-release
+          - broker-release
+          - cf-rabbitmq-multitenant-broker-release
+    - task: transfer-rabbitmq-broker
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: broker-release
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - broker-release
+          - /data/repo/bosh/release
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new RabbitMQ Broker release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new RabbitMQ Broker release
+- name: fetch-rabbitmq-smoke-tests
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: cf-rabbitmq-release
+      passed:
+        - fetch-rabbitmq
+      trigger: true
+    - get: cf-rabbitmq-multitenant-broker-release
+      passed:
+        - fetch-rabbitmq-broker
+      trigger: true
+    - get: cf-rabbitmq-smoke-tests-release
+    - task: process-rabbitmq-smoke-tests
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: cf-rabbitmq-smoke-tests-release
+        outputs:
+        - name: smoke-tests-release
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          args:
+          - cf-rabbitmq-smoke-tests-release
+          - smoke-tests-release
+          - cf-rabbitmq-smoke-tests-release
+    - task: transfer-rabbitmq-smoke-tests
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: smoke-tests-release
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - smoke-tests-release
+          - /data/repo/bosh/release
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process latest RabbitMQ Smoke Tests release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed latest RabbitMQ Smoke Tests release
+- name: fetch-cf-cli
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: cf-rabbitmq-release
+      passed:
+        - fetch-rabbitmq
+      trigger: true
+    - get: cf-rabbitmq-multitenant-broker-release
+      passed:
+        - fetch-rabbitmq-broker
+      trigger: true
+    - get: cf-cli-release
+    - task: process-cf-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: cf-cli-release
+        outputs:
+        - name: cf-cli-release-output
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          args:
+          - cf-cli-release
+          - cf-cli-release-output
+          - cf-cli-release
+    - task: transfer-cf-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: cf-cli-release-output
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - cf-cli-release-output
+          - /data/repo/bosh/release
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process latest CF-CLI release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed latest CF-CLI release
+- name: fetch-routing
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: cf-rabbitmq-release
+      passed:
+        - fetch-rabbitmq
+      trigger: true
+    - get: cf-rabbitmq-multitenant-broker-release
+      passed:
+        - fetch-rabbitmq-broker
+      trigger: true
+    - get: routing-release
+    - task: process-routing
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: routing-release
+        outputs:
+        - name: routing-release-output
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          args:
+          - routing-release
+          - routing-release-output
+          - routing-release
+    - task: transfer-routing
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: routing-release-output
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - routing-release-output
+          - /data/repo/bosh/release
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process latest Routing release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed latest Routing release
+- name: fetch-bpm
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: cf-rabbitmq-release
+      passed:
+        - fetch-rabbitmq
+      trigger: true
+    - get: cf-rabbitmq-multitenant-broker-release
+      passed:
+        - fetch-rabbitmq-broker
+      trigger: true
+    - get: bpm-release
+    - task: process-bpm
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: bpm-release
+        outputs:
+        - name: bpm-release-output
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          args:
+          - bpm-release
+          - bpm-release-output
+          - bpm-release
+    - task: transfer-bpm
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: bpm-release-output
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - bpm-release-output
+          - /data/repo/bosh/release
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process latest BPM release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed latest BPM release
