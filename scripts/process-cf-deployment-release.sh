@@ -22,7 +22,7 @@ bosh int ${REPO_LOCATION}/cf-deployment.yml \
 echo Fetching releases
 source ${FETCH_SCRIPT} manifest.yml ${RELEASE_FOLDER}
 
-if [ -f ${GITHUB_RELEASE_LOCATION}/body ]; then
+if [[ -f ${GITHUB_RELEASE_LOCATION}/body ]]; then
   echo Copying release notes
   cp ${GITHUB_RELEASE_LOCATION}/body ${RELEASE_FOLDER}/cf-deployment-$(cat ${GITHUB_RELEASE_LOCATION}/version)-release.md
 fi
@@ -33,5 +33,5 @@ STEMCELL_VERSION=$(bosh int manifest.yml --path /stemcells/alias=default/version
 echo Fetching the stemcell ${STEMCELL_OS}/${STEMCELL_VERSION}
 
 pushd ${STEMCELL_FOLDER} > /dev/null
-curl --silent -LOJ --retry 5 https://bosh.io/d/stemcells/bosh-vsphere-esxi-${STEMCELL_OS}-go_agent?v=${STEMCELL_VERSION}
+curl --silent --retry 5 -Lo bosh-stemcell-${STEMCELL_VERSION}-vsphere-esxi-${STEMCELL_OS}-go_agent.tgz https://bosh.io/d/stemcells/bosh-vsphere-esxi-${STEMCELL_OS}-go_agent?v=${STEMCELL_VERSION}
 popd > /dev/null

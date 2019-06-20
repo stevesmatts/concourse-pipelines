@@ -139,13 +139,15 @@ $ vim credentials.yml
 Credentials.yml content:
 
 ```text
-sync_server: <VM IP>
+rsync_server: <VM IP>
 rsync_user: joe
 rsync_key: |
   <CONTENT OF ~/.ssh/id_rsa>
+rsync_key_base64: <base64 encode of rsync_key>  
 github_access_token: <A GIT PERSONAL ACCESS TOKEN>
 slack_hook: <SLACK INCOMING WEB HOOK>
 slack_disabled: false      # Notification ca be disabled with this flag
+pivnet_token: <pivnet token for accessing buildpacks>
 ```
 
 ```bash
@@ -159,72 +161,6 @@ $ cd concourse-pipelines
 $ fly -t mirror l -c http://127.0.0.1:8080 -u joe -p <ENTER PASSWORD>
 $ ./set_pipelines.sh
 ```
-
-## <a name='roles'></a>Pipelines roles
-
-### Buildpacks
-
-Pulls the following artifacts:
-- Pivotal Network:
-  - binary-buildpack
-  - go-buildpack
-  - nodejs-buildpack
-  - php-buildpack
-  - python-buildpack
-  - ruby-buildpack
-  - staticfile-buildpack
-
-### CF
-
-Pulls the required artifacts defined in the cf-deployment github repo. See scripts/process-cf-repo-update.sh
-
-### Concourse
-
-Pulls the required artifacts defined in the concourse-bosh-deployment github repo. See scripts/process-concourse-repo-update.sh
-
-### Director
-
-Pulls the required artifacts defined in the bosh-deployment github repo. See scripts/process-bosh-repo-update.sh
-
-### Mattermost
-
-Pulls the following artifacts:
-- bosh.io:
-  - cloudfoundry-community/mattermost-boshrelease
-  
-### Memcache
-
-Pulls the following artifacts:
-- bosh.io:
-  - cloudfoundry-community/memcache-release
-  
-### Minio
-
-Pulls the following artifacts:
-- bosh.io:
-  - minio/minio-boshrelease
-  
-### MySQL
-
-Pulls the following artifacts:
-- bosh.io:
-  - cloudfoundry/cf-mysql-release
-
-### RabbitMQ
-
-Pulls the following artifacts:
-- bosh.io:
-  - pivotal-cf/cf-rabbitmq-release
-  - pivotal-cf/cf-rabbitmq-multitenant-broker-release
-  - bosh-packages/cf-cli-release
-
-### Tools
-Pulls the following artifacts:
-- github.com releases:
-  - cloudfoundry/bosh-cli
-  - cloudfoundry/cli
-  - cloudfoundry-incubator/credhub-cli
-  - cloudfoundry-incubator/bosh-backup-and-restore
   
 ## <a name='support'></a>Supporting Tools
 
