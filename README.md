@@ -6,7 +6,6 @@
 * <a href='#concourse'>Install and configure concourse</a>
 * <a href='#run'>Run Docker Concourse</a>
 * <a href='#configure'>Configure Pipelines</a>
-* <a href='#roles'>Pipelines roles</a>
 * <a href='#support'>Supporting tools</a>
 
 ## <a name='install'></a>Install Docker
