@@ -54,10 +54,12 @@ jobs:
         outputs:
           - name: doomsday-cli
         run:
-          path: pipelines-repo/scripts/process-doomsday-cli.sh
+          path: pipelines-repo/scripts/copy-github-release.sh
           args:
             - doomsday-cli-release
             - doomsday-cli
+            - doomsday
+            - true
     - task: transfer-cli
       config:
         platform: linux
@@ -74,7 +76,7 @@ jobs:
             - ((rsync_user))
             - ((rsync_key_base64))
             - doomsday-cli
-            - /data/repo/bosh/doomsday
+            - /data/repo/bosh
     on_failure:
       put: notify
       params:
@@ -105,10 +107,11 @@ jobs:
         outputs:
         - name: doomsday-bosh
         run:
-          path: pipelines-repo/scripts/process-doomsday-bosh.sh
+          path: pipelines-repo/scripts/copy-github-release.sh
           args:
           - doomsday-bosh-release
           - doomsday-bosh
+          - doomsday
     - task: transfer-bosh-releases
       config:
         platform: linux

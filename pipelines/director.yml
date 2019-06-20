@@ -21,6 +21,24 @@ resources:
   type: bosh-io-release
   source:
     repository: cloudfoundry/bosh-dns-release
+- name: bosh-cli-release
+  type: github-release
+  source:
+    owner: cloudfoundry
+    repository: bosh-cli
+    access_token: ((github_access_token))
+- name: credhub-cli-release
+  type: github-release
+  source:
+    owner: cloudfoundry-incubator
+    repository: credhub-cli
+    access_token: ((github_access_token))
+- name: bbr-release
+  type: github-release
+  source:
+    owner: cloudfoundry-incubator
+    repository: bosh-backup-and-restore
+    access_token: ((github_access_token))
 - name: notify
   type: slack-notification
   source:
@@ -104,3 +122,168 @@ jobs:
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Bosh Director release
+- name: fetch-bosh-cli
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: bosh-cli-release
+      trigger: true
+      params:
+        globs:
+        - "bosh-cli-*-linux-amd64"
+    - task: process-bosh-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: bosh-cli-release
+        outputs:
+        - name: bosh-cli
+        run:
+          path: pipelines-repo/scripts/copy-github-release.sh
+          args:
+          - bosh-cli-release
+          - bosh-cli
+          - bosh-cli
+    - task: transfer-bosh-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: bosh-cli
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - bosh-cli
+          - /data/repo/bosh
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Bosh CLI release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Bosh CLI release
+- name: fetch-credhub-cli
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: credhub-cli-release
+      trigger: true
+      params:
+        globs:
+        - "credhub-linux-*.tgz"
+    - task: process-credhub-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: credhub-cli-release
+        outputs:
+        - name: credhub-cli
+        run:
+          path: pipelines-repo/scripts/copy-github-release.sh
+          args:
+          - credhub-cli-release
+          - credhub-cli
+          - credhub
+    - task: transfer-credhub-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: credhub-cli
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - credhub-cli
+          - /data/repo/bosh/credhub
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Credhub CLI release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Credhub CLI release
+- name: fetch-bbr-cli
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: bbr-release
+      trigger: true
+      params:
+        globs:
+        - "bbr-*.tar"
+    - task: process-bbr-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: bbr-release
+        outputs:
+        - name: bbr-cli
+        run:
+          path: pipelines-repo/scripts/copy-github-release.sh
+          args:
+          - bbr-release
+          - bbr-cli
+          - bbr
+    - task: transfer-bbr-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: bbr-cli
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - bbr-cli
+          - /data/repo/bosh/bbr
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new BBR CLI release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new BBR CLI release

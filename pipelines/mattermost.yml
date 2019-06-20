@@ -43,11 +43,11 @@ jobs:
         outputs:
         - name: releases
         run:
-          path: pipelines-repo/scripts/process-mattermost.sh
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
           args:
-          - pipelines-repo/scripts/copy-bosh-io-release.sh
           - mattermost-boshrelease
           - releases
+          - mattermost-boshrelease
     - task: transfer-releases
       config:
         platform: linux
