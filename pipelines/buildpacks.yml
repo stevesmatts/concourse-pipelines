@@ -5,11 +5,6 @@ resource_types:
   source:
     repository: cfcommunity/slack-notification-resource
     tag: latest
-- name: pivnet
-  type: docker-image
-  source:
-    repository: pivotalcf/pivnet-resource
-    tag: latest-final
 
 resources:
 - name: pipelines-repo
@@ -17,51 +12,72 @@ resources:
   source:
     uri: https://github.com/trecnoc/concourse-pipelines.git
     branch: master
-- name: dotnet-buildpack
-  type: pivnet
-  source:
-    api_token: ((pivnet_token))
-    product_slug: dotnet-core-buildpack
 - name: binary-buildpack
-  type: pivnet
+  type: github-release
   source:
-    api_token: ((pivnet_token))
-    product_slug: binary-buildpack
+    owner: cloudfoundry
+    repository: binary-buildpack
+    access_token: ((github_access_token))
+- name: dotnet-core-buildpack
+  type: github-release
+  source:
+    owner: cloudfoundry
+    repository: dotnet-core-buildpack
+    access_token: ((github_access_token))
 - name: go-buildpack
-  type: pivnet
+  type: github-release
   source:
-    api_token: ((pivnet_token))
-    product_slug: go-buildpack
+    owner: cloudfoundry
+    repository: go-buildpack
+    access_token: ((github_access_token))
 - name: java-buildpack
-  type: pivnet
+  type: github-release
   source:
-    api_token: ((pivnet_token))
-    product_slug: java-buildpack
+    owner: cloudfoundry
+    repository: java-buildpack
+    access_token: ((github_access_token))
+- name: nginx-buildpack
+  type: github-release
+  source:
+    owner: cloudfoundry
+    repository: nginx-buildpack
+    access_token: ((github_access_token))
 - name: nodejs-buildpack
-  type: pivnet
+  type: github-release
   source:
-    api_token: ((pivnet_token))
-    product_slug: nodejs-buildpack
+    owner: cloudfoundry
+    repository: nodejs-buildpack
+    access_token: ((github_access_token))
 - name: php-buildpack
-  type: pivnet
+  type: github-release
   source:
-    api_token: ((pivnet_token))
-    product_slug: php-buildpack
+    owner: cloudfoundry
+    repository: php-buildpack
+    access_token: ((github_access_token))
 - name: python-buildpack
-  type: pivnet
+  type: github-release
   source:
-    api_token: ((pivnet_token))
-    product_slug: python-buildpack
+    owner: cloudfoundry
+    repository: python-buildpack
+    access_token: ((github_access_token))
+- name: r-buildpack
+  type: github-release
+  source:
+    owner: cloudfoundry
+    repository: r-buildpack
+    access_token: ((github_access_token))
 - name: ruby-buildpack
-  type: pivnet
+  type: github-release
   source:
-    api_token: ((pivnet_token))
-    product_slug: ruby-buildpack
+    owner: cloudfoundry
+    repository: ruby-buildpack
+    access_token: ((github_access_token))
 - name: staticfile-buildpack
-  type: pivnet
+  type: github-release
   source:
-    api_token: ((pivnet_token))
-    product_slug: staticfile-buildpack
+    owner: cloudfoundry
+    repository: staticfile-buildpack
+    access_token: ((github_access_token))
 - name: notify
   type: slack-notification
   source:
@@ -69,72 +85,37 @@ resources:
     disable: ((slack_disabled))
 
 jobs:
-- name: fetch-buildpacks
+- name: package-binary-buildpack
   public: true
   build_logs_to_retain: 1
   plan:
   - do:
     - get: pipelines-repo
-    - get: dotnet-buildpack
-      trigger: true
-      params:
-        globs: ["*cflinuxfs2*.zip"]
     - get: binary-buildpack
       trigger: true
       params:
-        globs: ["*cflinuxfs2*.zip"]
-    - get: go-buildpack
-      trigger: true
-      params:
-        globs: ["*cflinuxfs2*.zip"]
-    - get: java-buildpack
-      trigger: true
-      params:
-        globs: ["*offline*.zip"]
-    - get: nodejs-buildpack
-      trigger: true
-      params:
-        globs: ["*cflinuxfs2*.zip"]
-    - get: php-buildpack
-      trigger: true
-      params:
-        globs: ["*cflinuxfs2*.zip"]
-    - get: python-buildpack
-      trigger: true
-      params:
-        globs: ["*cflinuxfs2*.zip"]
-    - get: ruby-buildpack
-      trigger: true
-      params:
-        globs: ["*cflinuxfs2*.zip"]
-    - get: staticfile-buildpack
-      trigger: true
-      params:
-        globs: ["*cflinuxfs2*.zip"]
-    - task: collect-buildpacks
+        include_source_tarball: true
+    - task: package-binary-buildpack
       config:
         platform: linux
         image_resource:
           type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
+          source:
+            repository: starkandwayne/concourse-go
+            tag: 1.12
         inputs:
         - name: pipelines-repo
-        - name: dotnet-buildpack
         - name: binary-buildpack
-        - name: go-buildpack
-        - name: java-buildpack
-        - name: nodejs-buildpack
-        - name: php-buildpack
-        - name: python-buildpack
-        - name: ruby-buildpack
-        - name: staticfile-buildpack
         outputs:
-        - name: outgoing-artifacts
+        - name: binary-buildpack-cached
         run:
-          path: pipelines-repo/scripts/process-buildpacks.sh
+          path: pipelines-repo/scripts/process-buildpack.sh
           args:
-          - outgoing-artifacts
-    - task: transfer-artifacts
+            - binary
+            - binary-buildpack
+            - binary-buildpack-cached
+            - all
+    - task: transfer-binary-buildpack
       config:
         platform: linux
         image_resource:
@@ -142,22 +123,592 @@ jobs:
           source: {repository: trecnoc/concourse-rsync}
         inputs:
         - name: pipelines-repo
-        - name: outgoing-artifacts
+        - name: binary-buildpack-cached
         run:
           path: pipelines-repo/scripts/rsync.sh
           args:
           - ((rsync_server))
           - ((rsync_user))
           - ((rsync_key_base64))
-          - outgoing-artifacts
+          - binary-buildpack-cached
           - /data/repo/buildpacks
     on_failure:
       put: notify
       params:
         icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Buildpack releases
+        text: Failed to process new Binary Buildpack releases
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
-        text: Successfully processed new Buildpack releases
+        text: Successfully processed new Binary Buildpack releases
+- name: package-dotnet-core-buildpack
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: dotnet-core-buildpack
+      trigger: true
+      params:
+        include_source_tarball: true
+    - task: package-dotnet-core-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: starkandwayne/concourse-go
+            tag: 1.12
+        inputs:
+        - name: pipelines-repo
+        - name: dotnet-core-buildpack
+        outputs:
+        - name: dotnet-core-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/process-buildpack.sh
+          args:
+            - dotnet-core
+            - dotnet-core-buildpack
+            - dotnet-core-buildpack-cached
+            - all
+    - task: transfer-dotnet-core-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: dotnet-core-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - dotnet-core-buildpack-cached
+          - /data/repo/buildpacks
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new .Net Core Buildpack releases
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new .Net Core Buildpack releases
+- name: package-go-buildpack
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: go-buildpack
+      trigger: true
+      params:
+        include_source_tarball: true
+    - task: package-go-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: starkandwayne/concourse-go
+            tag: 1.12
+        inputs:
+        - name: pipelines-repo
+        - name: go-buildpack
+        outputs:
+        - name: go-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/process-buildpack.sh
+          args:
+            - go
+            - go-buildpack
+            - go-buildpack-cached
+            - all
+    - task: transfer-go-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: go-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - go-buildpack-cached
+          - /data/repo/buildpacks
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Go Buildpack releases
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Go Buildpack releases
+- name: package-java-buildpack
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: java-buildpack
+      trigger: true
+      params:
+        include_source_tarball: true
+    - task: package-java-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: starkandwayne/concourse-ruby
+            tag: 2.5
+        inputs:
+        - name: pipelines-repo
+        - name: java-buildpack
+        outputs:
+        - name: java-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/process-buildpack-java.sh
+          args:
+            - java
+            - java-buildpack
+            - java-buildpack-cached
+            - all
+    - task: transfer-java-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: java-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - java-buildpack-cached
+          - /data/repo/buildpacks
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Java Buildpack releases
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Java Buildpack releases
+- name: package-nginx-buildpack
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: nginx-buildpack
+      trigger: true
+      params:
+        include_source_tarball: true
+    - task: package-nginx-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: starkandwayne/concourse-go
+            tag: 1.12
+        inputs:
+        - name: pipelines-repo
+        - name: nginx-buildpack
+        outputs:
+        - name: nginx-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/process-buildpack.sh
+          args:
+            - nginx
+            - nginx-buildpack
+            - nginx-buildpack-cached
+            - all
+    - task: transfer-nginx-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: nginx-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - nginx-buildpack-cached
+          - /data/repo/buildpacks
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new NGINX Buildpack releases
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new NGINX Buildpack releases
+- name: package-nodejs-buildpack
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: nodejs-buildpack
+      trigger: true
+      params:
+        include_source_tarball: true
+    - task: package-nodejs-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: starkandwayne/concourse-go
+            tag: 1.12
+        inputs:
+        - name: pipelines-repo
+        - name: nodejs-buildpack
+        outputs:
+        - name: nodejs-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/process-buildpack.sh
+          args:
+            - nodejs
+            - nodejs-buildpack
+            - nodejs-buildpack-cached
+            - all
+    - task: transfer-nodejs-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: nodejs-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - nodejs-buildpack-cached
+          - /data/repo/buildpacks
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new NodeJS Buildpack releases
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new NodeJS Buildpack releases
+- name: package-php-buildpack
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: php-buildpack
+      trigger: true
+      params:
+        include_source_tarball: true
+    - task: package-php-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: starkandwayne/concourse-go
+            tag: 1.12
+        inputs:
+        - name: pipelines-repo
+        - name: php-buildpack
+        outputs:
+        - name: php-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/process-buildpack.sh
+          args:
+            - php
+            - php-buildpack
+            - php-buildpack-cached
+            - all
+    - task: transfer-php-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: php-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - php-buildpack-cached
+          - /data/repo/buildpacks
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new PHP Buildpack releases
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new PHP Buildpack releases
+- name: package-python-buildpack
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: python-buildpack
+      trigger: true
+      params:
+        include_source_tarball: true
+    - task: package-python-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: starkandwayne/concourse-go
+            tag: 1.12
+        inputs:
+        - name: pipelines-repo
+        - name: python-buildpack
+        outputs:
+        - name: python-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/process-buildpack.sh
+          args:
+            - python
+            - python-buildpack
+            - python-buildpack-cached
+            - all
+    - task: transfer-python-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: python-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - python-buildpack-cached
+          - /data/repo/buildpacks
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Python Buildpack releases
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Python Buildpack releases
+- name: package-r-buildpack
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: r-buildpack
+      trigger: true
+      params:
+        include_source_tarball: true
+    - task: package-r-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: starkandwayne/concourse-go
+            tag: 1.12
+        inputs:
+        - name: pipelines-repo
+        - name: r-buildpack
+        outputs:
+        - name: r-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/process-buildpack.sh
+          args:
+            - r
+            - r-buildpack
+            - r-buildpack-cached
+            - all
+    - task: transfer-r-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: r-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - r-buildpack-cached
+          - /data/repo/buildpacks
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new R Buildpack releases
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new R Buildpack releases
+- name: package-ruby-buildpack
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: ruby-buildpack
+      trigger: true
+      params:
+        include_source_tarball: true
+    - task: package-ruby-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: starkandwayne/concourse-go
+            tag: 1.12
+        inputs:
+        - name: pipelines-repo
+        - name: ruby-buildpack
+        outputs:
+        - name: ruby-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/process-buildpack.sh
+          args:
+            - ruby
+            - ruby-buildpack
+            - ruby-buildpack-cached
+            - all
+    - task: transfer-ruby-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: ruby-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - ruby-buildpack-cached
+          - /data/repo/buildpacks
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Ruby Buildpack releases
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Ruby Buildpack releases
+- name: package-staticfile-buildpack
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: staticfile-buildpack
+      trigger: true
+      params:
+        include_source_tarball: true
+    - task: package-staticfile-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: starkandwayne/concourse-go
+            tag: 1.12
+        inputs:
+        - name: pipelines-repo
+        - name: staticfile-buildpack
+        outputs:
+        - name: staticfile-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/process-buildpack.sh
+          args:
+            - staticfile
+            - staticfile-buildpack
+            - staticfile-buildpack-cached
+            - all
+    - task: transfer-staticfile-buildpack
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: staticfile-buildpack-cached
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - staticfile-buildpack-cached
+          - /data/repo/buildpacks
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new StaticFile Buildpack releases
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new StaticFile Buildpack releases
