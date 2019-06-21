@@ -443,15 +443,15 @@ jobs:
         image_resource:
           type: docker-image
           source:
-            repository: starkandwayne/concourse-go
-            tag: 1.12
+            repository: starkandwayne/concourse-ruby
+            tag: 2.5
         inputs:
         - name: pipelines-repo
         - name: php-buildpack
         outputs:
         - name: php-buildpack-cached
         run:
-          path: pipelines-repo/scripts/process-buildpack.sh
+          path: pipelines-repo/scripts/process-buildpack-php.sh
           args:
             - php
             - php-buildpack
