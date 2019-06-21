@@ -14,5 +14,5 @@ echo Processing CF CLI ${CF_CLI_VERSION} linux client
 curl --silent --retry 5 -Lo ${CF_CLI_OUTPUT}/cf-cli-installer_${CF_CLI_VERSION}_winx64.zip "https://packages.cloudfoundry.org/stable?release=windows64&version=${CF_CLI_VERSION}&source=github-rel"
 if [[ -f ${CF_CLI_SOURCE}/body ]]; then
   echo Processing CF CLI ${CF_CLI_VERSION} release notes
-  cp ${CF_CLI_SOURCE}/body ${CF_CLI_OUTPUT}/cf-cli--installer_${CF_CLI_VERSION}-release.md
+  cp ${CF_CLI_SOURCE}/body ${CF_CLI_OUTPUT}/cf-cli-installer_${CF_CLI_VERSION}-release.md
 fi
