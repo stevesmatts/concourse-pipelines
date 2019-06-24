@@ -43,6 +43,7 @@ jobs:
         - name: cf-mysql-deployment-repo
         outputs:
         - name: releases
+        - name: stemcell
         run:
           path: pipelines-repo/scripts/process-cf-mysql-deployment-repo.sh
           args:
@@ -50,6 +51,7 @@ jobs:
           - cf-mysql-deployment-repo
           - pipelines-repo/scripts/ops_files
           - releases
+          - stemcell
     - task: transfer-releases
       config:
         platform: linux
@@ -67,6 +69,23 @@ jobs:
           - ((rsync_key_base64))
           - releases
           - /data/repo/bosh/release
+    - task: transfer-stemcell
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: stemcell
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - stemcell
+          - /data/repo/bosh/stemcell
     on_failure:
       put: notify
       params:

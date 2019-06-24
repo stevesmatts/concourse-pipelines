@@ -17,6 +17,10 @@ resources:
   source:
     uri: https://github.com/concourse/concourse-bosh-deployment.git
     tag_filter: v*
+- name: stemcell
+  type: bosh-io-stemcell
+  source:
+    name: bosh-vsphere-esxi-ubuntu-xenial-go_agent
 - name: notify
   type: slack-notification
   source:
@@ -76,3 +80,59 @@ jobs:
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Concourse release
+- name: fetch-stemcell
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: concourse-deployment-repo
+      passed:
+        - fetch-concourse
+      trigger: true
+    - get: stemcell
+      params:
+        preserve_filename: true
+    - task: process-stemcell
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: stemcell
+        outputs:
+        - name: stemcell-output
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-stemcell.sh
+          args:
+          - stemcell
+          - stemcell-output
+    - task: transfer-stemcell
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: stemcell-output
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - stemcell-output
+          - /data/repo/bosh/stemcell
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process latest Stemcell
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed latest Stemcell
