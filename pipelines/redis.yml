@@ -1,0 +1,255 @@
+---
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
+
+resources:
+- name: pipelines-repo
+  type: git
+  source:
+    uri: https://github.com/trecnoc/concourse-pipelines.git
+    branch: master
+- name: cf-redis-release
+  type: bosh-io-release
+  source:
+    repository: pivotal-cf/cf-redis-release
+- name: routing-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry-incubator/cf-routing-release
+- name: syslog-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry/syslog-release
+- name: stemcell
+  type: bosh-io-stemcell
+  source:
+    name: bosh-vsphere-esxi-ubuntu-xenial-go_agent
+- name: notify
+  type: slack-notification
+  source:
+    url: ((slack_hook))
+    disable: ((slack_disabled))
+
+jobs:
+- name: fetch-redis
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: cf-redis-release
+      trigger: true
+    - task: process-redis
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: cf-redis-release
+        outputs:
+        - name: redis-releases
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          args:
+          - cf-redis-release
+          - redis-releases
+          - cf-redis-release
+    - task: transfer-redis-releases
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: redis-releases
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - redis-releases
+          - /data/repo/bosh/release
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Redis release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Redis release
+- name: fetch-routing
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: cf-redis-release
+      passed:
+        - fetch-redis
+      trigger: true
+    - get: routing-release
+    - task: process-routing
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: routing-release
+        outputs:
+        - name: routing-release-output
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          args:
+          - routing-release
+          - routing-release-output
+          - routing-release
+    - task: transfer-routing
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: routing-release-output
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - routing-release-output
+          - /data/repo/bosh/release
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process latest Routing release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed latest Routing release
+- name: fetch-syslog
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: cf-redis-release
+      passed:
+        - fetch-redis
+      trigger: true
+    - get: syslog-release
+    - task: process-syslog
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: syslog-release
+        outputs:
+        - name: syslog-release-output
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          args:
+          - syslog-release
+          - syslog-release-output
+          - syslog-release
+    - task: transfer-syslog
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: syslog-release-output
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - syslog-release-output
+          - /data/repo/bosh/release
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process latest Syslog release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed latest Syslog release
+- name: fetch-stemcell
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: cf-redis-release
+      passed:
+        - fetch-redis
+      trigger: true
+    - get: stemcell
+      params:
+        preserve_filename: true
+    - task: process-stemcell
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: stemcell
+        outputs:
+        - name: stemcell-output
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-stemcell.sh
+          args:
+          - stemcell
+          - stemcell-output
+    - task: transfer-stemcell
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: stemcell-output
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - stemcell-output
+          - /data/repo/bosh/stemcell
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process latest Stemcell
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed latest Stemcell
