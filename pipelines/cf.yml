@@ -54,6 +54,12 @@ resources:
     owner: ECSTeam
     repository: cloudfoundry-top-plugin
     access_token: ((github_access_token))
+- name: buildpack-usage-release
+  type: github-release
+  source:
+    owner: ECSTeam
+    repository: buildpack-usage
+    access_token: ((github_access_token))
 - name: notify
   type: slack-notification
   source:
@@ -470,3 +476,60 @@ jobs:
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new CF Top CF CLI Plugin release
+- name: fetch-buildpack-usage-plugin
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: buildpack-usage-release
+      trigger: true
+      params:
+        globs:
+          - buildpack-usage-linux
+          - buildpack-usage-windows.exe
+    - task: process-buildpack-usage-plugin
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: buildpack-usage-release
+        outputs:
+        - name: buildpack-usage-plugin
+        run:
+          path: pipelines-repo/scripts/copy-github-release.sh
+          args:
+          - buildpack-usage-release
+          - buildpack-usage-plugin
+          - buildpack-usage
+          - true
+    - task: transfer-buildpack-usage-plugin
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: buildpack-usage-plugin
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - buildpack-usage-plugin
+          - /data/repo/cf_cli/plugins
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Buildpack Usage CF CLI Plugin release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Buildpack Usage CF CLI Plugin release
