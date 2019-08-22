@@ -105,8 +105,11 @@ jobs:
   plan:
   - do:
     - get: pipelines-repo
-    - get: cf-rabbitmq-multitenant-broker-release
+    - get: cf-rabbitmq-release
+      passed:
+        - fetch-rabbitmq
       trigger: true
+    - get: cf-rabbitmq-multitenant-broker-release
     - task: process-rabbitmq-broker
       config:
         platform: linux
@@ -160,10 +163,6 @@ jobs:
     - get: cf-rabbitmq-release
       passed:
         - fetch-rabbitmq
-      trigger: true
-    - get: cf-rabbitmq-multitenant-broker-release
-      passed:
-        - fetch-rabbitmq-broker
       trigger: true
     - get: cf-rabbitmq-smoke-tests-release
     - task: process-rabbitmq-smoke-tests
@@ -220,10 +219,6 @@ jobs:
       passed:
         - fetch-rabbitmq
       trigger: true
-    - get: cf-rabbitmq-multitenant-broker-release
-      passed:
-        - fetch-rabbitmq-broker
-      trigger: true
     - get: cf-cli-release
     - task: process-cf-cli
       config:
@@ -278,10 +273,6 @@ jobs:
     - get: cf-rabbitmq-release
       passed:
         - fetch-rabbitmq
-      trigger: true
-    - get: cf-rabbitmq-multitenant-broker-release
-      passed:
-        - fetch-rabbitmq-broker
       trigger: true
     - get: routing-release
     - task: process-routing
@@ -338,10 +329,6 @@ jobs:
       passed:
         - fetch-rabbitmq
       trigger: true
-    - get: cf-rabbitmq-multitenant-broker-release
-      passed:
-        - fetch-rabbitmq-broker
-      trigger: true
     - get: bpm-release
     - task: process-bpm
       config:
@@ -396,10 +383,6 @@ jobs:
     - get: cf-rabbitmq-release
       passed:
         - fetch-rabbitmq
-      trigger: true
-    - get: cf-rabbitmq-multitenant-broker-release
-      passed:
-        - fetch-rabbitmq-broker
       trigger: true
     - get: stemcell
       params:
