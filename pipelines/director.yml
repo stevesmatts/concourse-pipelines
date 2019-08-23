@@ -74,6 +74,7 @@ jobs:
           args:
           - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
           - bosh-deployment-repo
+          - pipelines-repo/scripts/ops_files
           - releases
           - stemcells
           - pipelines-repo/scripts/copy-bosh-io-release.sh
