@@ -11,4 +11,4 @@ bosh int ${REPO_LOCATION}/cluster/concourse.yml \
   -l ${REPO_LOCATION}/versions.yml >> manifest.yml
 
 echo Fetching releases
-source ${FETCH_SCRIPT} manifest.yml ${RELEASE_FOLDER}
+source ${FETCH_SCRIPT} manifest.yml ${RELEASE_FOLDER} "-->"
