@@ -60,6 +60,12 @@ resources:
     owner: ECSTeam
     repository: buildpack-usage
     access_token: ((github_access_token))
+- name: do-all-release
+  type: github-release
+  source:
+    owner: ECSTeam
+    repository: do-all
+    access_token: ((github_access_token))
 - name: notify
   type: slack-notification
   source:
@@ -522,6 +528,63 @@ jobs:
           - ((rsync_user))
           - ((rsync_key_base64))
           - buildpack-usage-plugin
+          - /data/repo/cf_cli/plugins
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Buildpack Usage CF CLI Plugin release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Buildpack Usage CF CLI Plugin release
+- name: fetch-do-all-plugin
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: do-all-release
+      trigger: true
+      params:
+        globs:
+          - do-all-linux-amd64
+          - do-all-windows-amd64.exe
+    - task: process-do-all-plugin
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: do-all-release
+        outputs:
+        - name: do-all-plugin
+        run:
+          path: pipelines-repo/scripts/copy-github-release.sh
+          args:
+          - do-all-release
+          - do-all-plugin
+          - do-all
+          - true
+    - task: transfer-do-all-plugin
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: do-all-plugin
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - do-all-plugin
           - /data/repo/cf_cli/plugins
     on_failure:
       put: notify
