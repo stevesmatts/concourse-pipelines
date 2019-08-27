@@ -1,0 +1,133 @@
+---
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
+
+resources:
+- name: pipelines-repo
+  type: git
+  source:
+    uri: https://github.com/trecnoc/concourse-pipelines.git
+    branch: master
+- name: logsearch-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry-community/logsearch-boshrelease
+- name: logsearch-for-cloudfoundry-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry-community/logsearch-for-cloudfoundry
+- name: notify
+  type: slack-notification
+  source:
+    url: ((slack_hook))
+    disable: ((slack_disabled))
+
+jobs:
+- name: fetch-logsearch
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: logsearch-release
+      trigger: true
+    - task: process-logsearch
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: logsearch-release
+        outputs:
+        - name: logsearch-releases
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          args:
+          - logsearch-release
+          - logsearch-releases
+          - logsearch-boshrelease
+    - task: transfer-logsearch-releases
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: logsearch-releases
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - logsearch-releases
+          - /data/repo/bosh/release
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new LogSearch release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new LogSearch release
+- name: fetch-logsearch-for-cf
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: logsearch-for-cloudfoundry-release
+      trigger: true
+    - task: process-logsearch-for-cf
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: logsearch-for-cloudfoundry-release
+        outputs:
+        - name: logsearch-for-cloudfoundry-releases
+        run:
+          path: pipelines-repo/scripts/copy-bosh-io-release.sh
+          args:
+          - logsearch-for-cloudfoundry-release
+          - logsearch-for-cloudfoundry-releases
+          - logsearch-for-cloudfoundry
+    - task: transfer-logsearch-for-cf-releases
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: logsearch-for-cloudfoundry-releases
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - logsearch-for-cloudfoundry-releases
+          - /data/repo/bosh/release
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new LogSearch for Cloud Foundry release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new LogSearch for Cloud Foundry release
