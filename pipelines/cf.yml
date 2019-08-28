@@ -590,9 +590,9 @@ jobs:
       put: notify
       params:
         icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Buildpack Usage CF CLI Plugin release
+        text: Failed to process new Do-All CF CLI Plugin release
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
-        text: Successfully processed new Buildpack Usage CF CLI Plugin release
+        text: Successfully processed new Do-All CF CLI Plugin release
