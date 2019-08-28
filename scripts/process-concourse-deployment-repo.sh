@@ -8,6 +8,7 @@ RELEASE_FOLDER=$3
 
 echo Generate a manifest with all the required ops files
 bosh int ${REPO_LOCATION}/cluster/concourse.yml \
+  -o ${REPO_LOCATION}/cluster/operations/backup-atc-colocated-web.yml \
   -l ${REPO_LOCATION}/versions.yml >> manifest.yml
 
 echo Fetching releases
