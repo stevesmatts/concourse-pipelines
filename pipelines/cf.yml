@@ -18,6 +18,12 @@ resources:
     owner: cloudfoundry
     repository: cf-deployment
     access_token: ((github_access_token))
+- name: cf-deployment-v2_7_0
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment.git
+    branch: master
+    tag_filter: "v2.7.0"
 - name: cf-mgmt-release
   type: github-release
   source:
@@ -94,7 +100,6 @@ jobs:
         - name: cf-deployment
         outputs:
         - name: releases
-        - name: stemcells
         run:
           path: pipelines-repo/scripts/process-cf-deployment-release.sh
           args:
@@ -102,7 +107,6 @@ jobs:
           - cf-deployment
           - pipelines-repo/scripts/ops_files
           - releases
-          - stemcells
     - task: transfer-cf-releases
       config:
         platform: linux
@@ -120,7 +124,62 @@ jobs:
           - ((rsync_key_base64))
           - releases
           - /data/repo/bosh/release
-    - task: transfer-cf-stemcells
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new CF Deployment release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new CF Deployment release
+- name: fetch-cf-v2_7_0
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: cf-deployment-v2_7_0
+      trigger: true
+    - task: process-cf-v2_7_0
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: cf-deployment-v2_7_0
+        outputs:
+        - name: releases
+        - name: stemcells
+        run:
+          path: pipelines-repo/scripts/process-cf-deployment-release-v2_7_0.sh
+          args:
+          - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
+          - cf-deployment-v2_7_0
+          - pipelines-repo/scripts/ops_files
+          - releases
+          - stemcells
+    - task: transfer-cf-releases-v2_7_0
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: releases
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - releases
+          - /data/repo/bosh/release
+    - task: transfer-cf-stemcells-v2_7_0
       config:
         platform: linux
         image_resource:
@@ -141,12 +200,12 @@ jobs:
       put: notify
       params:
         icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new CF Deployment release
+        text: Failed to process CF Deployment v2.7.0 release
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
-        text: Successfully processed new CF Deployment release
+        text: Successfully processed CF Deployment v2.7.0 release
 - name: fetch-cf-mgmt-cli
   public: true
   build_logs_to_retain: 1
