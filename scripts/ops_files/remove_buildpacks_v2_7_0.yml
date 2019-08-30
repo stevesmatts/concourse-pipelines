@@ -1,0 +1,19 @@
+---
+- type: remove
+  path: /releases/name=staticfile-buildpack
+- type: remove
+  path: /releases/name=ruby-buildpack
+- type: remove
+  path: /releases/name=python-buildpack
+- type: remove
+  path: /releases/name=php-buildpack
+- type: remove
+  path: /releases/name=nodejs-buildpack
+- type: remove
+  path: /releases/name=java-buildpack
+- type: remove
+  path: /releases/name=go-buildpack
+- type: remove
+  path: /releases/name=dotnet-core-buildpack
+- type: remove
+  path: /releases/name=binary-buildpack
