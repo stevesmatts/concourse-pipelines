@@ -16,7 +16,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/bosh-deployment.git
-    branch: master
+    tag_filter: "*"
 - name: bosh-dns-release
   type: bosh-io-release
   source:
