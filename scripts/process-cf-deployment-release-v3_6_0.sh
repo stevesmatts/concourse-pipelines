@@ -13,7 +13,7 @@ bosh int ${GIT_LOCATION}/cf-deployment.yml \
   -o ${GIT_LOCATION}/operations/enable-nfs-volume-service.yml \
   -o ${GIT_LOCATION}/operations/use-compiled-releases.yml \
   -o ${GIT_LOCATION}/operations/backup-and-restore/enable-backup-restore.yml \
-  -o ${OPS_FOLDER}/remove_buildpacks_v2_7_0.yml >> manifest.yml
+  -o ${OPS_FOLDER}/remove_buildpacks_v3_6_0.yml >> manifest.yml
 
 echo Fetching releases
 source ${FETCH_SCRIPT} manifest.yml ${RELEASE_FOLDER} "-->"
