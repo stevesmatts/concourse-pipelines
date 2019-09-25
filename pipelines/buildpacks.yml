@@ -228,7 +228,7 @@ jobs:
             - go
             - go-buildpack
             - go-buildpack-cached
-            - all
+            - 3
     - task: transfer-go-buildpack
       config:
         platform: linux
