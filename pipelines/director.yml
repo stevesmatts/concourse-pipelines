@@ -17,10 +17,6 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/bosh-deployment.git
     tag_filter: "*"
-- name: bosh-dns-release
-  type: bosh-io-release
-  source:
-    repository: cloudfoundry/bosh-dns-release
 - name: bosh-cli-release
   type: github-release
   source:
@@ -54,8 +50,6 @@ jobs:
     - get: pipelines-repo
     - get: bosh-deployment-repo
       trigger: true
-    - get: bosh-dns-release
-      trigger: true
     - task: process-director
       config:
         platform: linux
@@ -65,7 +59,6 @@ jobs:
         inputs:
         - name: pipelines-repo
         - name: bosh-deployment-repo
-        - name: bosh-dns-release
         outputs:
         - name: releases
         - name: stemcells
@@ -77,8 +70,6 @@ jobs:
           - pipelines-repo/scripts/ops_files
           - releases
           - stemcells
-          - pipelines-repo/scripts/copy-bosh-io-release.sh
-          - bosh-dns-release
     - task: transfer-releases
       config:
         platform: linux
