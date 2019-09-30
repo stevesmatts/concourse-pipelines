@@ -171,7 +171,7 @@ jobs:
             - dotnet-core
             - dotnet-core-buildpack
             - dotnet-core-buildpack-cached
-            - all
+            - 3
     - task: transfer-dotnet-core-buildpack
       config:
         platform: linux
