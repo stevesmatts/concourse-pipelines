@@ -23,7 +23,7 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/cf-deployment.git
     branch: master
-    tag_filter: "v4.5.0"
+    tag_filter: "v5.5.0"
 - name: cf-mgmt-release
   type: github-release
   source:
