@@ -684,7 +684,7 @@ jobs:
             - staticfile
             - staticfile-buildpack
             - staticfile-buildpack-cached
-            - all
+            - 3
     - task: transfer-staticfile-buildpack
       config:
         platform: linux
