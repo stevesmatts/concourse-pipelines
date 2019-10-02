@@ -627,7 +627,7 @@ jobs:
             - ruby
             - ruby-buildpack
             - ruby-buildpack-cached
-            - all
+            - 3
     - task: transfer-ruby-buildpack
       config:
         platform: linux
