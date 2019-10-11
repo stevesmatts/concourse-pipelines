@@ -342,7 +342,7 @@ jobs:
             - nginx
             - nginx-buildpack
             - nginx-buildpack-cached
-            - all
+            - 3
     - task: transfer-nginx-buildpack
       config:
         platform: linux
@@ -399,7 +399,7 @@ jobs:
             - nodejs
             - nodejs-buildpack
             - nodejs-buildpack-cached
-            - all
+            - 3
     - task: transfer-nodejs-buildpack
       config:
         platform: linux
