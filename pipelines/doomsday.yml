@@ -41,7 +41,7 @@ jobs:
       trigger: true
       params:
         globs:
-          - doomsday-linux
+          - "*linux*"
     - task: process-cli
       config:
         platform: linux
