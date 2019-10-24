@@ -109,11 +109,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Bosh Director release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Bosh Director release
+        silent: true
 - name: fetch-bosh-cli
   public: true
   build_logs_to_retain: 1
@@ -164,11 +166,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Bosh CLI release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Bosh CLI release
+        silent: true
 - name: fetch-credhub-cli
   public: true
   build_logs_to_retain: 1
@@ -219,11 +223,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Credhub CLI release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Credhub CLI release
+        silent: true
 - name: fetch-bbr-cli
   public: true
   build_logs_to_retain: 1
@@ -274,8 +280,10 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new BBR CLI release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new BBR CLI release
+        silent: true

@@ -70,8 +70,10 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Mattermost release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Mattermost release
+        silent: true

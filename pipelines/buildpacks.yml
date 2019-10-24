@@ -137,11 +137,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Binary Buildpack releases
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Binary Buildpack releases
+        silent: true
 - name: package-dotnet-core-buildpack
   public: true
   build_logs_to_retain: 1
@@ -194,11 +196,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new .Net Core Buildpack releases
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new .Net Core Buildpack releases
+        silent: true
 - name: package-go-buildpack
   public: true
   build_logs_to_retain: 1
@@ -251,11 +255,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Go Buildpack releases
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Go Buildpack releases
+        silent: true
 - name: package-java-buildpack
   public: true
   build_logs_to_retain: 1
@@ -308,11 +314,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Java Buildpack releases
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Java Buildpack releases
+        silent: true
 - name: package-nginx-buildpack
   public: true
   build_logs_to_retain: 1
@@ -365,11 +373,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new NGINX Buildpack releases
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new NGINX Buildpack releases
+        silent: true
 - name: package-nodejs-buildpack
   public: true
   build_logs_to_retain: 1
@@ -422,11 +432,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new NodeJS Buildpack releases
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new NodeJS Buildpack releases
+        silent: true
 - name: package-php-buildpack
   public: true
   build_logs_to_retain: 1
@@ -479,11 +491,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new PHP Buildpack releases
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new PHP Buildpack releases
+        silent: true
 - name: package-python-buildpack
   public: true
   build_logs_to_retain: 1
@@ -536,11 +550,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Python Buildpack releases
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Python Buildpack releases
+        silent: true
 - name: package-r-buildpack
   public: true
   build_logs_to_retain: 1
@@ -593,11 +609,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new R Buildpack releases
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new R Buildpack releases
+        silent: true
 - name: package-ruby-buildpack
   public: true
   build_logs_to_retain: 1
@@ -650,11 +668,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Ruby Buildpack releases
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Ruby Buildpack releases
+        silent: true
 - name: package-staticfile-buildpack
   public: true
   build_logs_to_retain: 1
@@ -707,8 +727,10 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new StaticFile Buildpack releases
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new StaticFile Buildpack releases
+        silent: true

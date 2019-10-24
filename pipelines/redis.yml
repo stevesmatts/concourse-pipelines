@@ -74,11 +74,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Redis release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Redis release
+        silent: true
 - name: fetch-syslog
   public: true
   build_logs_to_retain: 1
@@ -129,8 +131,10 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process latest Syslog release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed latest Syslog release
+        silent: true

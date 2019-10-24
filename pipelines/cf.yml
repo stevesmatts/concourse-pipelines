@@ -117,11 +117,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new CF Deployment release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new CF Deployment release
+        silent: true
 #- name: fetch-cf-additional
 #  public: true
 #  build_logs_to_retain: 1
@@ -245,11 +247,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new CF-MGMT CLI release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new CF-MGMT CLI release
+        silent: true
 - name: fetch-cf-cli
   public: true
   build_logs_to_retain: 1
@@ -296,11 +300,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new CF CLI release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new CF CLI release
+        silent: true
 - name: fetch-cf-top-plugin
   public: true
   build_logs_to_retain: 1
@@ -353,11 +359,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new CF Top CF CLI Plugin release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new CF Top CF CLI Plugin release
+        silent: true
 - name: fetch-buildpack-usage-plugin
   public: true
   build_logs_to_retain: 1
@@ -410,11 +418,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Buildpack Usage CF CLI Plugin release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Buildpack Usage CF CLI Plugin release
+        silent: true
 - name: fetch-do-all-plugin
   public: true
   build_logs_to_retain: 1
@@ -467,11 +477,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Do-All CF CLI Plugin release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Do-All CF CLI Plugin release
+        silent: true
 - name: fetch-stack-auditor-plugin
   public: true
   build_logs_to_retain: 1
@@ -524,8 +536,10 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Stack Auditor CF CLI Plugin release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Stack Auditor CF CLI Plugin release
+        silent: true

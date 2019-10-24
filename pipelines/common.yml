@@ -78,11 +78,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process latest Routing release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed latest Routing release
+        silent: true
 - name: fetch-bpm
   public: true
   build_logs_to_retain: 1
@@ -130,11 +132,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process latest BPM release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed latest BPM release
+        silent: true
 - name: fetch-stemcell
   public: true
   build_logs_to_retain: 1
@@ -183,8 +187,10 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process latest Stemcell
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed latest Stemcell
+        silent: true
