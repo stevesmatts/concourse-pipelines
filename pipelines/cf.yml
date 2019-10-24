@@ -18,12 +18,12 @@ resources:
     owner: cloudfoundry
     repository: cf-deployment
     access_token: ((github_access_token))
-- name: cf-deployment-additional
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/cf-deployment.git
-    branch: master
-    tag_filter: "v5.5.0"
+#- name: cf-deployment-additional
+#  type: git
+#  source:
+#    uri: https://github.com/cloudfoundry/cf-deployment.git
+#    branch: master
+#    tag_filter: "v5.5.0"
 - name: cf-mgmt-release
   type: github-release
   source:
@@ -35,24 +35,6 @@ resources:
   source:
     owner: cloudfoundry
     repository: cli
-    access_token: ((github_access_token))
-- name: antifreeze-release
-  type: github-release
-  source:
-    owner: odlp
-    repository: antifreeze
-    access_token: ((github_access_token))
-- name: autopilot-release
-  type: github-release
-  source:
-    owner: contraband
-    repository: autopilot
-    access_token: ((github_access_token))
-- name: cf-bpck-mngt-release
-  type: github-release
-  source:
-    owner: davidehringer
-    repository: cf-buildpack-management-plugin
     access_token: ((github_access_token))
 - name: cf-top-release
   type: github-release
@@ -71,6 +53,12 @@ resources:
   source:
     owner: ECSTeam
     repository: do-all
+    access_token: ((github_access_token))
+- name: stack-auditor-release
+  type: github-release
+  source:
+    owner: cloudfoundry
+    repository: stack-auditor
     access_token: ((github_access_token))
 - name: notify
   type: slack-notification
@@ -134,78 +122,78 @@ jobs:
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new CF Deployment release
-- name: fetch-cf-additional
-  public: true
-  build_logs_to_retain: 1
-  plan:
-  - do:
-    - get: pipelines-repo
-    - get: cf-deployment-additional
-      trigger: true
-    - task: process-cf-additional
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-deployment-additional
-        outputs:
-        - name: releases
-        - name: stemcells
-        run:
-          path: pipelines-repo/scripts/process-cf-deployment-release-additional.sh
-          args:
-          - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
-          - cf-deployment-additional
-          - pipelines-repo/scripts/ops_files
-          - releases
-          - stemcells
-    - task: transfer-cf-releases-additional
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: releases
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - releases
-          - /data/repo/bosh/release
-    - task: transfer-cf-stemcells-additional
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: stemcells
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - stemcells
-          - /data/repo/bosh/stemcell
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process CF Deployment Additional release
-    on_success:
-      put: notify
-      params:
-        icon_emoji: ":thumbsup:"
-        text: Successfully processed CF Deployment Additional release
+#- name: fetch-cf-additional
+#  public: true
+#  build_logs_to_retain: 1
+#  plan:
+#  - do:
+#    - get: pipelines-repo
+#    - get: cf-deployment-additional
+#      trigger: true
+#    - task: process-cf-additional
+#      config:
+#        platform: linux
+#        image_resource:
+#          type: docker-image
+#          source: {repository: starkandwayne/concourse}
+#        inputs:
+#        - name: pipelines-repo
+#        - name: cf-deployment-additional
+#        outputs:
+#        - name: releases
+#        - name: stemcells
+#        run:
+#          path: pipelines-repo/scripts/process-cf-deployment-release-additional.sh
+#          args:
+#          - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
+#          - cf-deployment-additional
+#          - pipelines-repo/scripts/ops_files
+#          - releases
+#          - stemcells
+#    - task: transfer-cf-releases-additional
+#      config:
+#        platform: linux
+#        image_resource:
+#          type: docker-image
+#          source: {repository: trecnoc/concourse-rsync}
+#        inputs:
+#        - name: pipelines-repo
+#        - name: releases
+#        run:
+#          path: pipelines-repo/scripts/rsync.sh
+#          args:
+#          - ((rsync_server))
+#          - ((rsync_user))
+#          - ((rsync_key_base64))
+#          - releases
+#          - /data/repo/bosh/release
+#    - task: transfer-cf-stemcells-additional
+#      config:
+#        platform: linux
+#        image_resource:
+#          type: docker-image
+#          source: {repository: trecnoc/concourse-rsync}
+#        inputs:
+#        - name: pipelines-repo
+#        - name: stemcells
+#        run:
+#          path: pipelines-repo/scripts/rsync.sh
+#          args:
+#          - ((rsync_server))
+#          - ((rsync_user))
+#          - ((rsync_key_base64))
+#          - stemcells
+#          - /data/repo/bosh/stemcell
+#    on_failure:
+#      put: notify
+#      params:
+#        icon_emoji: ":skull_and_crossbones:"
+#        text: Failed to process CF Deployment Additional release
+#    on_success:
+#      put: notify
+#      params:
+#        icon_emoji: ":thumbsup:"
+#        text: Successfully processed CF Deployment Additional release
 - name: fetch-cf-mgmt-cli
   public: true
   build_logs_to_retain: 1
@@ -313,177 +301,6 @@ jobs:
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new CF CLI release
-- name: fetch-antifreeze-plugin
-  public: true
-  build_logs_to_retain: 1
-  plan:
-  - do:
-    - get: pipelines-repo
-    - get: antifreeze-release
-      trigger: true
-      params:
-        globs:
-          - antifreeze-linux
-          - antifreeze.exe
-    - task: process-antifreeze-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: antifreeze-release
-        outputs:
-        - name: antifreeze-plugin
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - antifreeze-release
-          - antifreeze-plugin
-          - antifreeze
-          - true
-    - task: transfer-antifreeze-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: antifreeze-plugin
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - antifreeze-plugin
-          - /data/repo/cf_cli/plugins
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Antifreeze CF CLI Plugin release
-    on_success:
-      put: notify
-      params:
-        icon_emoji: ":thumbsup:"
-        text: Successfully processed new Antifreeze CF CLI Plugin release
-- name: fetch-autopilot-plugin
-  public: true
-  build_logs_to_retain: 1
-  plan:
-  - do:
-    - get: pipelines-repo
-    - get: autopilot-release
-      trigger: true
-      params:
-        globs:
-          - autopilot-linux
-          - autopilot.exe
-    - task: process-autopilot-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: autopilot-release
-        outputs:
-        - name: autopilot-plugin
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - autopilot-release
-          - autopilot-plugin
-          - autopilot
-          - true
-    - task: transfer-autopilot-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: autopilot-plugin
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - autopilot-plugin
-          - /data/repo/cf_cli/plugins
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Autopilot CF CLI Plugin release
-    on_success:
-      put: notify
-      params:
-        icon_emoji: ":thumbsup:"
-        text: Successfully processed new Autopilot CF CLI Plugin release
-- name: fetch-cf-bpck-mngt-plugin
-  public: true
-  build_logs_to_retain: 1
-  plan:
-  - do:
-    - get: pipelines-repo
-    - get: cf-bpck-mngt-release
-      trigger: true
-      params:
-        globs:
-          - cf-buildpack-management-plugin_linux_amd64
-          - cf-buildpack-management-plugin_windows_amd64.exe
-    - task: process-cf-bpck-mngt-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-bpck-mngt-release
-        outputs:
-        - name: cf-bpck-mngt-plugin
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - cf-bpck-mngt-release
-          - cf-bpck-mngt-plugin
-          - cf-buildpack-management
-          - true
-    - task: transfer-cf-bpck-mngt-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-bpck-mngt-plugin
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - cf-bpck-mngt-plugin
-          - /data/repo/cf_cli/plugins
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Buildpack Management CF CLI Plugin release
-    on_success:
-      put: notify
-      params:
-        icon_emoji: ":thumbsup:"
-        text: Successfully processed new Buildpack Management CF CLI Plugin release
 - name: fetch-cf-top-plugin
   public: true
   build_logs_to_retain: 1
@@ -655,3 +472,60 @@ jobs:
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Do-All CF CLI Plugin release
+- name: fetch-stack-auditor-plugin
+  public: true
+  build_logs_to_retain: 1
+  plan:
+  - do:
+    - get: pipelines-repo
+    - get: stack-auditor-release
+      trigger: true
+      params:
+        globs:
+          - stack-auditor-*-linux.tgz
+          - stack-auditor-*-windows.zip
+    - task: process-stack-auditor-plugin
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: starkandwayne/concourse}
+        inputs:
+        - name: pipelines-repo
+        - name: stack-auditor-release
+        outputs:
+        - name: stack-auditor-plugin
+        run:
+          path: pipelines-repo/scripts/copy-github-release.sh
+          args:
+          - stack-auditor-release
+          - stack-auditor-plugin
+          - stack-auditor
+          - true
+    - task: transfer-stack-auditor-plugin
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: trecnoc/concourse-rsync}
+        inputs:
+        - name: pipelines-repo
+        - name: stack-auditor-plugin
+        run:
+          path: pipelines-repo/scripts/rsync.sh
+          args:
+          - ((rsync_server))
+          - ((rsync_user))
+          - ((rsync_key_base64))
+          - stack-auditor-plugin
+          - /data/repo/cf_cli/plugins
+    on_failure:
+      put: notify
+      params:
+        icon_emoji: ":skull_and_crossbones:"
+        text: Failed to process new Stack Auditor CF CLI Plugin release
+    on_success:
+      put: notify
+      params:
+        icon_emoji: ":thumbsup:"
+        text: Successfully processed new Stack Auditor CF CLI Plugin release
