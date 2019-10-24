@@ -71,8 +71,10 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Concourse release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Concourse release
+        silent: true

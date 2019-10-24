@@ -74,11 +74,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new LogSearch release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new LogSearch release
+        silent: true
 - name: fetch-logsearch-for-cf
   public: true
   build_logs_to_retain: 1
@@ -126,8 +128,10 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new LogSearch for Cloud Foundry release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new LogSearch for Cloud Foundry release
+        silent: true

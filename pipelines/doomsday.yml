@@ -82,11 +82,13 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Doomsday CLI release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Doomsday CLI release
+        silent: true
 - name: fetch-bosh-release
   public: true
   build_logs_to_retain: 1
@@ -134,8 +136,10 @@ jobs:
       params:
         icon_emoji: ":skull_and_crossbones:"
         text: Failed to process new Doomsday Bosh release
+        silent: true
     on_success:
       put: notify
       params:
         icon_emoji: ":thumbsup:"
         text: Successfully processed new Doomsday Bosh release
+        silent: true
