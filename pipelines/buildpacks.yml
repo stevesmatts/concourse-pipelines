@@ -114,7 +114,7 @@ jobs:
             - binary
             - binary-buildpack
             - binary-buildpack-cached
-            - all
+            - 3
     - task: transfer-binary-buildpack
       config:
         platform: linux
@@ -291,7 +291,7 @@ jobs:
             - java
             - java-buildpack
             - java-buildpack-cached
-            - all
+            - 3
     - task: transfer-java-buildpack
       config:
         platform: linux
@@ -468,7 +468,7 @@ jobs:
             - php
             - php-buildpack
             - php-buildpack-cached
-            - all
+            - 3
     - task: transfer-php-buildpack
       config:
         platform: linux
@@ -527,7 +527,7 @@ jobs:
             - python
             - python-buildpack
             - python-buildpack-cached
-            - all
+            - 3
     - task: transfer-python-buildpack
       config:
         platform: linux
@@ -586,7 +586,7 @@ jobs:
             - r
             - r-buildpack
             - r-buildpack-cached
-            - all
+            - 3
     - task: transfer-r-buildpack
       config:
         platform: linux
