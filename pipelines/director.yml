@@ -16,7 +16,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/bosh-deployment.git
-    tag_filter: "*"
+    branch: master
 - name: bosh-cli-release
   type: github-release
   source:
