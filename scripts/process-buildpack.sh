@@ -39,7 +39,7 @@ fi
 
 popd > /dev/null
 
-mv ${BUILD_FOLDER}/release-packages.md ${OUTPUT_FOLDER}/${BUILDPACK}_buildpack-cached-$(cat ${GITHUB_REPO}/version)-release-packages.md
+#mv ${BUILD_FOLDER}/release-packages.md ${OUTPUT_FOLDER}/${BUILDPACK}_buildpack-cached-$(cat ${GITHUB_REPO}/version)-release-packages.md
 mv ${BUILD_FOLDER}/*.zip ${OUTPUT_FOLDER}
 
 if [[ -f ${GITHUB_REPO}/body ]]; then
