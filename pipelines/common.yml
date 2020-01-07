@@ -15,7 +15,7 @@ resources:
 - name: routing-release
   type: bosh-io-release
   source:
-    repository: cloudfoundry-incubator/cf-routing-release
+    repository: cloudfoundry/routing-release
 - name: bpm-release
   type: bosh-io-release
   source:
