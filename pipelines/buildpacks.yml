@@ -456,7 +456,7 @@ jobs:
           type: docker-image
           source:
             repository: starkandwayne/concourse-ruby
-            tag: 2.3
+            tag: 2.4
         inputs:
         - name: pipelines-repo
         - name: php-buildpack
