@@ -185,6 +185,7 @@ jobs:
       params:
         globs:
         - "credhub-linux-*.tgz"
+        - "credhub-windows-*.tgz"
     - task: process-credhub-cli
       config:
         platform: linux
