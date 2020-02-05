@@ -127,6 +127,7 @@ jobs:
       params:
         globs:
         - "bosh-cli-*-linux-amd64"
+        - "bosh-cli-*-windows-amd64.exe"
     - task: process-bosh-cli
       config:
         platform: linux
