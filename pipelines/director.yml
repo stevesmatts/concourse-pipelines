@@ -127,6 +127,7 @@ jobs:
       params:
         globs:
         - "bosh-cli-*-linux-amd64"
+        - "bosh-cli-*-windows-amd64.exe"
     - task: process-bosh-cli
       config:
         platform: linux
@@ -184,6 +185,7 @@ jobs:
       params:
         globs:
         - "credhub-linux-*.tgz"
+        - "credhub-windows-*.tgz"
     - task: process-credhub-cli
       config:
         platform: linux
