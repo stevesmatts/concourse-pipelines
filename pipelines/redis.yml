@@ -12,10 +12,10 @@ resources:
   source:
     uri: https://github.com/trecnoc/concourse-pipelines.git
     branch: master
-- name: cf-redis-release
+- name: shared-redis-release
   type: bosh-io-release
   source:
-    repository: pivotal-cf/cf-redis-release
+    repository: pivotal-cf/shared-redis-release
 - name: syslog-release
   type: bosh-io-release
   source:
@@ -33,7 +33,7 @@ jobs:
   plan:
   - do:
     - get: pipelines-repo
-    - get: cf-redis-release
+    - get: shared-redis-release
       trigger: true
     - task: process-redis
       config:
@@ -43,15 +43,15 @@ jobs:
           source: {repository: starkandwayne/concourse}
         inputs:
         - name: pipelines-repo
-        - name: cf-redis-release
+        - name: shared-redis-release
         outputs:
         - name: redis-releases
         run:
           path: pipelines-repo/scripts/copy-bosh-io-release.sh
           args:
-          - cf-redis-release
+          - shared-redis-release
           - redis-releases
-          - cf-redis-release
+          - shared-redis-release
     - task: transfer-redis-releases
       config:
         platform: linux
@@ -87,7 +87,7 @@ jobs:
   plan:
   - do:
     - get: pipelines-repo
-    - get: cf-redis-release
+    - get: shared-redis-release
       passed:
         - fetch-redis
       trigger: true
