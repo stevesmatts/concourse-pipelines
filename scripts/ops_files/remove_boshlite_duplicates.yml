@@ -1,7 +1,5 @@
 ---
 - type: remove
-  path: /releases/name=bosh
+  path: /releases/name=bosh?
 - type: remove
-  path: /releases/name=bpm
-- type: remove
-  path: /releases/name=os-conf
+  path: /releases/name=os-conf?

@@ -39,6 +39,7 @@ echo Generate a manifest with all the required ops files for a Bosh-Lite directo
 bosh int ${REPO_LOCATION}/bosh.yml \
   -o ${REPO_LOCATION}/virtualbox/cpi.yml \
   -o ${REPO_LOCATION}/bosh-lite.yml \
+  -o ${OPS_FOLDER}/remove_bpm_release.yml \
   -o ${OPS_FOLDER}/remove_boshlite_duplicates.yml >> manifest-lite.yml
 
 echo Fetching bosh-lite only releases
