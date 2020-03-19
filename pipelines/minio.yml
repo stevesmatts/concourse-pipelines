@@ -80,7 +80,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new Minio release
         silent: true
 - name: fetch-minio-cli
@@ -133,6 +132,5 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new Minio CLI release
         silent: true

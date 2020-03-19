@@ -86,7 +86,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new RabbitMQ release
         silent: true
 - name: fetch-rabbitmq-broker
@@ -143,7 +142,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new RabbitMQ Broker release
         silent: true
 - name: fetch-rabbitmq-smoke-tests
@@ -200,7 +198,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed latest RabbitMQ Smoke Tests release
         silent: true
 - name: fetch-cf-cli
@@ -257,6 +254,5 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed latest CF-CLI release
         silent: true

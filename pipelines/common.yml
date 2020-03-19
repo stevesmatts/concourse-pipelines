@@ -86,7 +86,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed latest Routing release
         silent: true
 - name: fetch-bpm
@@ -140,7 +139,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed latest BPM release
         silent: true
 - name: fetch-stemcell
@@ -195,7 +193,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed latest Stemcell
         silent: true
 - name: fetch-stemcell-lite
@@ -250,6 +247,5 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed latest Stemcell for Bosh Lite
         silent: true

@@ -76,6 +76,5 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new MySQL release
         silent: true

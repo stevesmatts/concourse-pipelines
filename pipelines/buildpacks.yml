@@ -141,7 +141,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new Binary Buildpack releases
         silent: true
 - name: package-dotnet-core-buildpack
@@ -200,7 +199,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new .Net Core Buildpack releases
         silent: true
 - name: package-go-buildpack
@@ -259,7 +257,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new Go Buildpack releases
         silent: true
 - name: package-java-buildpack
@@ -318,7 +315,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new Java Buildpack releases
         silent: true
 - name: package-nginx-buildpack
@@ -377,7 +373,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new NGINX Buildpack releases
         silent: true
 - name: package-nodejs-buildpack
@@ -436,7 +431,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new NodeJS Buildpack releases
         silent: true
 - name: package-php-buildpack
@@ -495,7 +489,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new PHP Buildpack releases
         silent: true
 - name: package-python-buildpack
@@ -554,7 +547,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new Python Buildpack releases
         silent: true
 - name: package-r-buildpack
@@ -613,7 +605,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new R Buildpack releases
         silent: true
 - name: package-ruby-buildpack
@@ -672,7 +663,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new Ruby Buildpack releases
         silent: true
 - name: package-staticfile-buildpack
@@ -731,6 +721,5 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new StaticFile Buildpack releases
         silent: true
