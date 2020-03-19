@@ -86,7 +86,6 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new Doomsday CLI release
         silent: true
 - name: fetch-bosh-release
@@ -140,6 +139,5 @@ jobs:
     on_success:
       put: notify
       params:
-        icon_emoji: ":thumbsup:"
         text: Successfully processed new Doomsday Bosh release
         silent: true
