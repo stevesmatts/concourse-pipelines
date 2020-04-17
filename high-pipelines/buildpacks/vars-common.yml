@@ -1,0 +1,12 @@
+# Pipeline common task repository and branch
+tasks-repository: <ENTER CONCOURSE-PIPELINES-TASK REPO>
+tasks-branch: master
+
+# Nexus location for fetch the cached buildpack and uploading the Bosh release
+nexus-url: "<ENTER NEXUS REPO>"
+nexus-debug: false
+nexus-repository: software
+# Where do we get the cached buildpack
+nexus-buildpack-group: /buildpacks
+# Where do we upload the buildpack Bosh release
+nexus-bosh-group: /bosh/release

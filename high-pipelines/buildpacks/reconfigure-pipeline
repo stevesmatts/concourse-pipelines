@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+set -e
+set -o pipefail
+
+if [[ "$#" -ne 2 ]]; then
+  echo "Invalid number of parameters, requires the concourse target and the pipeline name"
+  exit 1
+fi
+
+if ! command -v fly > /dev/null 2>&1; then
+  echo "fly must be installed before running this script!"
+  exit 1
+fi
+
+pipelines_path=$(cd $(dirname $0) && pwd)
+concourse_target=$1
+pipeline_name=$2
+
+if [[ ! -f ${pipelines_path}/vars-${pipeline_name}.yml ]]; then
+  echo "no vars file exist for the ${pipeline_name} pipeline, looking for vars-${pipeline_name}.yml"
+  exit 1
+fi
+
+if [[ -f ${pipelines_path}/creds.yml ]]; then
+  FLY_EXTRA="-l ${pipelines_path}/creds.yml"
+fi
+
+echo "configuring the $pipeline_name pipeline..."
+
+fly -t ${concourse_target} set-pipeline \
+  -p ${pipeline_name} \
+  -c ${pipelines_path}/pipeline.yml \
+  -l ${pipelines_path}/vars-common.yml \
+  -l ${pipelines_path}/vars-${pipeline_name}.yml ${FLY_EXTRA}
+  
+fly -t ${concourse_target} unpause-pipeline \
+  -p ${pipeline_name} > /dev/null
