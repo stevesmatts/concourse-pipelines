@@ -1,0 +1,6 @@
+nexus-buildpack-regexp: "buildpacks/binary_buildpack-cached-cflinuxfs3-v(.*).zip"
+nexus-bosh-regexp: "bosh/release/binary-buildpack-release-(.*).tgz"
+buildpack-git-repository: <ENTER BINARY BUILDPACK BOSH REPO>
+buildpack-git-branch: master
+buildpack-blob-name: binary-buildpack
+buildpack-blob-regexp: "binary-buildpack/binary_buildpack-cached-cflinuxfs3-v(.*).zip"
