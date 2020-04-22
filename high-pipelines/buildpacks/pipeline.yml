@@ -25,7 +25,7 @@ resources:
     repository: ((nexus-repository))
     group: ((nexus-buildpack-group))
     regexp: ((nexus-buildpack-regexp))
-    debug: ((nexus-debug))
+    timeout: ((nexus-timeout))
 - name: buildpack-repo
   type: git
   source:
@@ -42,6 +42,7 @@ resources:
     repository: ((nexus-repository))
     group: ((nexus-bosh-group))
     regexp: ((nexus-bosh-regexp))
+    timeout: ((nexus-timeout))
 - name: notify
   type: slack-notifier
   source:
