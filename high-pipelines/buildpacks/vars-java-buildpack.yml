@@ -1,0 +1,6 @@
+nexus-buildpack-regexp: "buildpacks/java-buildpack-offline-v(.*).zip"
+nexus-bosh-regexp: "bosh/release/java-buildpack-release-(.*).tgz"
+buildpack-git-repository: <ENTER JAVA BUILDPACK BOSH REPO>
+buildpack-git-branch: master
+buildpack-blob-name: java-buildpack
+buildpack-blob-regexp: "java-buildpack/java-buildpack-offline-v(.*).zip"
