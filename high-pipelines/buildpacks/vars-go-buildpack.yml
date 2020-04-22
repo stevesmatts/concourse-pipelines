@@ -1,0 +1,6 @@
+nexus-buildpack-regexp: "buildpacks/go_buildpack-cached-cflinuxfs3-v(.*).zip"
+nexus-bosh-regexp: "bosh/release/go-buildpack-release-(.*).tgz"
+buildpack-git-repository: <ENTER GO BUILDPACK BOSH REPO>
+buildpack-git-branch: master
+buildpack-blob-name: go-buildpack
+buildpack-blob-regexp: "go-buildpack/go_buildpack-cached-cflinuxfs3-v(.*).zip"
