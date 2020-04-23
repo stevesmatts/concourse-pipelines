@@ -1,0 +1,6 @@
+nexus-buildpack-regexp: "buildpacks/php_buildpack-cached-cflinuxfs3-v(.*).zip"
+nexus-bosh-regexp: "bosh/release/php-buildpack-release-(.*).tgz"
+buildpack-git-repository: <ENTER PHP BUILDPACK BOSH REPO>
+buildpack-git-branch: master
+buildpack-blob-name: php-buildpack
+buildpack-blob-regexp: "php-buildpack/php_buildpack-cached-cflinuxfs3-v(.*).zip"
