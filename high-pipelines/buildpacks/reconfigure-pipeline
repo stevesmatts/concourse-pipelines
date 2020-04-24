@@ -28,11 +28,11 @@ fi
 
 echo "configuring the $pipeline_name pipeline..."
 
-fly -t ${concourse_target} set-pipeline \
+fly -t ${concourse_target} set-pipeline -n \
   -p ${pipeline_name} \
   -c ${pipelines_path}/pipeline.yml \
   -l ${pipelines_path}/vars-common.yml \
   -l ${pipelines_path}/vars-${pipeline_name}.yml ${FLY_EXTRA}
-  
+
 fly -t ${concourse_target} unpause-pipeline \
-  -p ${pipeline_name} > /dev/null
+  -p ${pipeline_name}
