@@ -1,0 +1,6 @@
+nexus-buildpack-regexp: "buildpacks/r_buildpack-cached-cflinuxfs3-v(.*).zip"
+nexus-bosh-regexp: "bosh/release/r-buildpack-release-(.*).tgz"
+buildpack-git-repository: <ENTER R BUILDPACK BOSH REPO>
+buildpack-git-branch: master
+buildpack-blob-name: r-buildpack
+buildpack-blob-regexp: "r-buildpack/r_buildpack-cached-cflinuxfs3-v(.*).zip"
