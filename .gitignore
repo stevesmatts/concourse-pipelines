@@ -1,4 +1,5 @@
 creds.yml
 credential.yml
 credentials.yml
+credentials*.yml
 private.yml
