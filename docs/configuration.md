@@ -36,26 +36,10 @@ git clone https://github.com/trecnoc/concourse-pipelines.git
 
 ### Generate a credentials file
 
-In `/data/scripts/concourse-pipelines` create a file called credentials.yml and
-add the following entries:
+Use the `generate_credentials.sh` script to generate a credential file.
 
-```yml
-rsync_server: <VM IP>
-rsync_user: <user running the pipelines>
-github_access_token: <a github personal access token otherwise API calls are throttled>
-slack_disabled: <true|false to disable the Slack notifications>
-slack_hook: <Slack notification webhook>
-```
-
-Now add the base64 encoded value of the private key of the user running the pipelines:
-
-```bash
-printf "rsync_key_base64: " >> credentials.yml
-base64 ~/.ssh/id_rsa | tr -d '\n' >> credentials.yml
-printf "\n" >> credentials.yml
-```
-
-Make sure the file is secure `chmod 660 credentials.yml`
+Open the generated file and validate the content. If the content is correct run
+`ln -sf credentials_$(date +"%m%d%Y").yml credentials.yml`.
 
 ### Login to Concourse and set the Pipelines
 
