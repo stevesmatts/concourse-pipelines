@@ -1,16 +1,19 @@
 ---
 resource_types:
-- name: slack-notification
+- name: slack-notifier
   type: docker-image
   source:
-    repository: cfcommunity/slack-notification-resource
-    tag: latest
+    repository: mockersf/concourse-slack-notifier
+- name: rsync
+  type: docker-image
+  source:
+    repository: trecnoc/rsync-resource
 
 resources:
-- name: pipelines-repo
+- name: pipeline-tasks
   type: git
   source:
-    uri: https://github.com/trecnoc/concourse-pipelines.git
+    uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
     branch: master
 - name: routing-release
   type: bosh-io-release
@@ -28,224 +31,154 @@ resources:
   type: bosh-io-stemcell
   source:
     name: bosh-warden-boshlite-ubuntu-xenial-go_agent
+- name: release-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/release
+- name: stemcell-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/stemcell
 - name: notify
-  type: slack-notification
+  type: slack-notifier
   source:
     url: ((slack_hook))
-    disable: ((slack_disabled))
+    disabled: ((slack_disabled))
 
 jobs:
-- name: fetch-routing
-  public: true
-  build_logs_to_retain: 1
+- name: mirror-routing-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
+  - in_parallel:
+    - get: pipeline-tasks
     - get: routing-release
       trigger: true
-    - task: process-routing
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: routing-release
-        outputs:
-        - name: routing-release-output
-        run:
-          path: pipelines-repo/scripts/copy-bosh-io-release.sh
-          args:
-          - routing-release
-          - routing-release-output
-          - routing-release
-    - task: transfer-routing
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: routing-release-output
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - routing-release-output
-          - /data/repo/bosh/release
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process latest Routing release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed latest Routing release
-        silent: true
-- name: fetch-bpm
-  public: true
-  build_logs_to_retain: 1
+  - task: rename-release
+    file: pipeline-tasks/rename-bosh-io-release.yml
+    input_mapping:
+      release-input: routing-release
+  - put: release-mirror
+    params:
+      sub_dir: release-output
+  - task: generate-notification
+    file: pipeline-tasks/generate-notification.yml
+    input_mapping:
+      content-input: routing-release
+    params:
+      INPUT_TYPE: bosh_io_release
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-bpm-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
+  - in_parallel:
+    - get: pipeline-tasks
     - get: bpm-release
       trigger: true
-    - task: process-bpm
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: bpm-release
-        outputs:
-        - name: bpm-release-output
-        run:
-          path: pipelines-repo/scripts/copy-bosh-io-release.sh
-          args:
-          - bpm-release
-          - bpm-release-output
-          - bpm-release
-    - task: transfer-bpm
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: bpm-release-output
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - bpm-release-output
-          - /data/repo/bosh/release
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process latest BPM release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed latest BPM release
-        silent: true
-- name: fetch-stemcell
-  public: true
-  build_logs_to_retain: 1
+  - task: rename-release
+    file: pipeline-tasks/rename-bosh-io-release.yml
+    input_mapping:
+      release-input: bpm-release
+  - put: release-mirror
+    params:
+      sub_dir: release-output
+  - task: generate-notification
+    file: pipeline-tasks/generate-notification.yml
+    input_mapping:
+      content-input: bpm-release
+    params:
+      INPUT_TYPE: bosh_io_release
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-stemcell
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
+  - in_parallel:
+    - get: pipeline-tasks
     - get: stemcell
       trigger: true
       params:
         preserve_filename: true
-    - task: process-stemcell
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: stemcell
-        outputs:
-        - name: stemcell-output
-        run:
-          path: pipelines-repo/scripts/copy-bosh-io-stemcell.sh
-          args:
-          - stemcell
-          - stemcell-output
-    - task: transfer-stemcell
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: stemcell-output
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - stemcell-output
-          - /data/repo/bosh/stemcell
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process latest Stemcell
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed latest Stemcell
-        silent: true
-- name: fetch-stemcell-lite
-  public: true
-  build_logs_to_retain: 1
+  - put: stemcell-mirror
+    params:
+      sub_dir: stemcell
+      include: "*.tgz"
+  - task: generate-notification
+    file: pipeline-tasks/generate-notification.yml
+    input_mapping:
+      content-input: stemcell
+    params:
+      INPUT_TYPE: bosh_io_stemcell
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-stemcell-lite
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
+  - in_parallel:
+    - get: pipeline-tasks
     - get: stemcell-lite
       trigger: true
       params:
         preserve_filename: true
-    - task: process-stemcell-lite
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: stemcell-lite
-        outputs:
-        - name: stemcell-lite-output
-        run:
-          path: pipelines-repo/scripts/copy-bosh-io-stemcell.sh
-          args:
-          - stemcell-lite
-          - stemcell-lite-output
-    - task: transfer-stemcell-lite
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: stemcell-lite-output
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - stemcell-lite-output
-          - /data/repo/bosh/stemcell
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process latest Stemcell for Bosh Lite
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed latest Stemcell for Bosh Lite
-        silent: true
+  - put: stemcell-mirror
+    params:
+      sub_dir: stemcell-lite
+      include: "*.tgz"
+  - task: generate-notification
+    file: pipeline-tasks/generate-notification.yml
+    input_mapping:
+      content-input: stemcell-lite
+    params:
+      INPUT_TYPE: bosh_io_stemcell
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
