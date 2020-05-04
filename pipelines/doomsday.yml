@@ -1,143 +1,122 @@
 ---
 resource_types:
-- name: slack-notification
+- name: slack-notifier
   type: docker-image
   source:
-    repository: cfcommunity/slack-notification-resource
-    tag: latest
+    repository: mockersf/concourse-slack-notifier
+- name: rsync
+  type: docker-image
+  source:
+    repository: trecnoc/rsync-resource
 
 resources:
-- name: pipelines-repo
+- name: pipeline-tasks
   type: git
   source:
-    uri: https://github.com/trecnoc/concourse-pipelines.git
+    uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
     branch: master
-- name: doomsday-cli-release
-  type: github-release
-  source:
-    owner: doomsday-project
-    repository: doomsday
-    access_token: ((github_access_token))
-- name: doomsday-bosh-release
+- name: doomsday-release
   type: github-release
   source:
     owner: doomsday-project
     repository: doomsday-boshrelease
     access_token: ((github_access_token))
+- name: doomsday-cli
+  type: github-release
+  source:
+    owner: doomsday-project
+    repository: doomsday
+    access_token: ((github_access_token))
+- name: release-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/release
+- name: cli-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/doomsday
 - name: notify
-  type: slack-notification
+  type: slack-notifier
   source:
     url: ((slack_hook))
-    disable: ((slack_disabled))
+    disabled: ((slack_disabled))
 
 jobs:
-- name: fetch-cli
-  public: true
-  build_logs_to_retain: 1
+- name: mirror-doomsday-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: doomsday-cli-release
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: doomsday-release
+      trigger: true
+  - task: copy-release
+    file: pipeline-tasks/copy-github-release.yml
+    input_mapping:
+      release-input: doomsday-release
+    params:
+      SKIP_VERSION_SUBDIR: true
+      RELEASE_NOTE_PREFIX: "doomsday"
+  - put: release-mirror
+    params:
+      sub_dir: artifacts
+  - task: generate-notification
+    file: pipeline-tasks/generate-notification.yml
+    input_mapping:
+      content-input: doomsday-release
+    params:
+      INPUT_TYPE: doomsday_bosh
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-doomsday-cli
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
+  plan:
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: doomsday-cli
       trigger: true
       params:
         globs:
-          - "*linux*"
-    - task: process-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-          - name: pipelines-repo
-          - name: doomsday-cli-release
-        outputs:
-          - name: doomsday-cli
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-            - doomsday-cli-release
-            - doomsday-cli
-            - doomsday
-            - true
-    - task: transfer-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-          - name: pipelines-repo
-          - name: doomsday-cli
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-            - ((rsync_server))
-            - ((rsync_user))
-            - ((rsync_key_base64))
-            - doomsday-cli
-            - /data/repo/bosh
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Doomsday CLI release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new Doomsday CLI release
-        silent: true
-- name: fetch-bosh-release
-  public: true
-  build_logs_to_retain: 1
-  plan:
-  - do:
-    - get: pipelines-repo
-    - get: doomsday-bosh-release
-      trigger: true
-    - task: process-bosh-release
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: doomsday-bosh-release
-        outputs:
-        - name: doomsday-bosh
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - doomsday-bosh-release
-          - doomsday-bosh
-          - doomsday
-    - task: transfer-bosh-releases
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: doomsday-bosh
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - doomsday-bosh
-          - /data/repo/bosh/release
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Doomsday Bosh release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new Doomsday Bosh release
-        silent: true
+          - "doomsday-linux*"
+  - task: copy-release
+    file: pipeline-tasks/copy-github-release.yml
+    input_mapping:
+      release-input: doomsday-cli
+  - put: cli-mirror
+    params:
+      sub_dir: artifacts
+  - task: generate-notification
+    file: pipeline-tasks/generate-notification.yml
+    input_mapping:
+      content-input: doomsday-cli
+    params:
+      INPUT_TYPE: doomsday_cli
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
