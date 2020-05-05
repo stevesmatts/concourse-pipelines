@@ -1,16 +1,19 @@
 ---
 resource_types:
-- name: slack-notification
+- name: slack-notifier
   type: docker-image
   source:
-    repository: cfcommunity/slack-notification-resource
-    tag: latest
+    repository: mockersf/concourse-slack-notifier
+- name: rsync
+  type: docker-image
+  source:
+    repository: trecnoc/rsync-resource
 
 resources:
-- name: pipelines-repo
+- name: pipeline-tasks
   type: git
   source:
-    uri: https://github.com/trecnoc/concourse-pipelines.git
+    uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
     branch: master
 - name: cf-rabbitmq-release
   type: bosh-io-release
@@ -28,231 +31,158 @@ resources:
   type: bosh-io-release
   source:
     repository: bosh-packages/cf-cli-release
+- name: mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/release
 - name: notify
-  type: slack-notification
+  type: slack-notifier
   source:
     url: ((slack_hook))
-    disable: ((slack_disabled))
+    disabled: ((slack_disabled))
 
 jobs:
-- name: fetch-rabbitmq
-  public: true
-  build_logs_to_retain: 1
+- name: mirror-rabbitmq-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
+  - in_parallel:
+    - get: pipeline-tasks
     - get: cf-rabbitmq-release
       trigger: true
-    - task: process-rabbitmq
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-rabbitmq-release
-        outputs:
-        - name: rabbitmq-releases
-        run:
-          path: pipelines-repo/scripts/copy-bosh-io-release.sh
-          args:
-          - cf-rabbitmq-release
-          - rabbitmq-releases
-          - cf-rabbitmq-release
-    - task: transfer-rabbitmq-releases
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: rabbitmq-releases
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - rabbitmq-releases
-          - /data/repo/bosh/release
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new RabbitMQ release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new RabbitMQ release
-        silent: true
-- name: fetch-rabbitmq-broker
-  public: true
-  build_logs_to_retain: 1
+  - task: rename-release
+    file: pipeline-tasks/rename-bosh-io-release.yml
+    input_mapping:
+      release-input: cf-rabbitmq-release
+  - put: mirror
+    params:
+      sub_dir: release-output
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: cf-rabbitmq-release
+    params:
+      INPUT_TYPE: bosh_io_release
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-rabbitmq-broker-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
+  - in_parallel:
+    - get: pipeline-tasks
     - get: cf-rabbitmq-release
       passed:
-        - fetch-rabbitmq
+        - mirror-rabbitmq-release
       trigger: true
     - get: cf-rabbitmq-multitenant-broker-release
-    - task: process-rabbitmq-broker
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-rabbitmq-multitenant-broker-release
-        outputs:
-        - name: broker-release
-        run:
-          path: pipelines-repo/scripts/copy-bosh-io-release.sh
-          args:
-          - cf-rabbitmq-multitenant-broker-release
-          - broker-release
-          - cf-rabbitmq-multitenant-broker-release
-    - task: transfer-rabbitmq-broker
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: broker-release
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - broker-release
-          - /data/repo/bosh/release
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new RabbitMQ Broker release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new RabbitMQ Broker release
-        silent: true
-- name: fetch-rabbitmq-smoke-tests
-  public: true
-  build_logs_to_retain: 1
+  - task: rename-release
+    file: pipeline-tasks/rename-bosh-io-release.yml
+    input_mapping:
+      release-input: cf-rabbitmq-multitenant-broker-release
+  - put: mirror
+    params:
+      sub_dir: release-output
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: cf-rabbitmq-multitenant-broker-release
+    params:
+      INPUT_TYPE: bosh_io_release
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-rabbitmq-smoke-tests-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
+  - in_parallel:
+    - get: pipeline-tasks
     - get: cf-rabbitmq-release
       passed:
-        - fetch-rabbitmq
+        - mirror-rabbitmq-release
       trigger: true
     - get: cf-rabbitmq-smoke-tests-release
-    - task: process-rabbitmq-smoke-tests
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-rabbitmq-smoke-tests-release
-        outputs:
-        - name: smoke-tests-release
-        run:
-          path: pipelines-repo/scripts/copy-bosh-io-release.sh
-          args:
-          - cf-rabbitmq-smoke-tests-release
-          - smoke-tests-release
-          - cf-rabbitmq-smoke-tests-release
-    - task: transfer-rabbitmq-smoke-tests
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: smoke-tests-release
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - smoke-tests-release
-          - /data/repo/bosh/release
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process latest RabbitMQ Smoke Tests release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed latest RabbitMQ Smoke Tests release
-        silent: true
-- name: fetch-cf-cli
-  public: true
-  build_logs_to_retain: 1
+  - task: rename-release
+    file: pipeline-tasks/rename-bosh-io-release.yml
+    input_mapping:
+      release-input: cf-rabbitmq-smoke-tests-release
+  - put: mirror
+    params:
+      sub_dir: release-output
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: cf-rabbitmq-smoke-tests-release
+    params:
+      INPUT_TYPE: bosh_io_release
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-cf-cli-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
+  - in_parallel:
+    - get: pipeline-tasks
     - get: cf-rabbitmq-release
       passed:
-        - fetch-rabbitmq
+        - mirror-rabbitmq-release
       trigger: true
     - get: cf-cli-release
-    - task: process-cf-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-cli-release
-        outputs:
-        - name: cf-cli-release-output
-        run:
-          path: pipelines-repo/scripts/copy-bosh-io-release.sh
-          args:
-          - cf-cli-release
-          - cf-cli-release-output
-          - cf-cli-release
-    - task: transfer-cf-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-cli-release-output
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - cf-cli-release-output
-          - /data/repo/bosh/release
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process latest CF-CLI release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed latest CF-CLI release
-        silent: true
+  - task: rename-release
+    file: pipeline-tasks/rename-bosh-io-release.yml
+    input_mapping:
+      release-input: cf-cli-release
+  - put: mirror
+    params:
+      sub_dir: release-output
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: cf-cli-release
+    params:
+      INPUT_TYPE: bosh_io_release
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal

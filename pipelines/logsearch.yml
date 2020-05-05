@@ -1,80 +1,100 @@
 ---
 resource_types:
-- name: slack-notification
+- name: slack-notifier
   type: docker-image
   source:
-    repository: cfcommunity/slack-notification-resource
-    tag: latest
+    repository: mockersf/concourse-slack-notifier
+- name: rsync
+  type: docker-image
+  source:
+    repository: trecnoc/rsync-resource
 
 resources:
-- name: pipelines-repo
+- name: pipeline-tasks
   type: git
   source:
-    uri: https://github.com/trecnoc/concourse-pipelines.git
+    uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
     branch: master
-- name: logsearch-deployment-repo
+- name: logsearch-deployment
   type: git
   source:
     uri: https://github.com/cloudfoundry-community/logsearch-boshrelease.git
     tag_filter: v*
+- name: mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/release
 - name: notify
-  type: slack-notification
+  type: slack-notifier
   source:
     url: ((slack_hook))
-    disable: ((slack_disabled))
+    disabled: ((slack_disabled))
 
 jobs:
-- name: fetch-logsearch
-  public: true
-  build_logs_to_retain: 1
+- name: mirror-logsearch-releases
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: logsearch-deployment-repo
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: logsearch-deployment
       trigger: true
-    - task: process-logsearch
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: logsearch-deployment-repo
-        outputs:
-        - name: releases
-        run:
-          path: pipelines-repo/scripts/process-logsearch-deployment-repo.sh
-          args:
-          - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
-          - logsearch-deployment-repo
-          - pipelines-repo/scripts/ops_files
-          - releases
-    - task: transfer-releases
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: releases
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - releases
-          - /data/repo/bosh/release
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new LogSearch release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new LogSearch release
-        silent: true
+  - task: generate-manifest
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: starkandwayne/concourse}
+      inputs:
+      - name: logsearch-deployment
+      outputs:
+      - name: manifest
+      run:
+        path: /bin/bash
+        args:
+        - -c
+        - |
+          set -e
+          set -o pipefail
+
+          printf "Generating manifest for Logsearch Bosh deployment version %s\n" $(cat logsearch-deployment/.git/ref)
+          printf "Excluding BPM and Routing releases"
+
+          cat << EOF > remove-unnecessary-releases.yml
+          ---
+          - type: remove
+            path: /releases/name=bpm?
+          - type: remove
+            path: /releases/name=routing?
+          EOF
+
+          bosh int logsearch-deployment/deployment/logsearch-deployment.yml \
+            -o logsearch-deployment/deployment/operations/cloudfoundry.yml \
+            -o remove-unnecessary-releases.yml > manifest/manifest.yml
+  - task: download-releases
+    file: pipeline-tasks/download-releases-from-manifest.yml
+  - put: mirror
+    params:
+      sub_dir: releases
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: logsearch-deployment
+    params:
+      INPUT_TYPE: generic
+      LABEL: "logsearch deployment"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal

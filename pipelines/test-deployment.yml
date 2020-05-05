@@ -1,78 +1,68 @@
 ---
 resource_types:
-- name: slack-notification
+- name: slack-notifier
   type: docker-image
   source:
-    repository: cfcommunity/slack-notification-resource
-    tag: latest
+    repository: mockersf/concourse-slack-notifier
+- name: rsync
+  type: docker-image
+  source:
+    repository: trecnoc/rsync-resource
 
 resources:
-- name: pipelines-repo
+- name: pipeline-tasks
   type: git
   source:
-    uri: https://github.com/trecnoc/concourse-pipelines.git
+    uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
     branch: master
 - name: postgres-release
   type: bosh-io-release
   source:
     repository: cloudfoundry/postgres-release
+- name: mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/release
 - name: notify
-  type: slack-notification
+  type: slack-notifier
   source:
     url: ((slack_hook))
-    disable: ((slack_disabled))
+    disabled: ((slack_disabled))
 
 jobs:
-- name: fetch-postgres
-  public: true
-  build_logs_to_retain: 1
+- name: mirror-postgres-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
+  - in_parallel:
+    - get: pipeline-tasks
     - get: postgres-release
       trigger: true
-    - task: process-postgres
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: postgres-release
-        outputs:
-        - name: postgres-releases
-        run:
-          path: pipelines-repo/scripts/copy-bosh-io-release.sh
-          args:
-          - postgres-release
-          - postgres-releases
-          - postgres-release
-    - task: transfer-postgres-releases
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: postgres-releases
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - postgres-releases
-          - /data/repo/bosh/release
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Postgres release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new Postgres release
-        silent: true
+  - task: rename-release
+    file: pipeline-tasks/rename-bosh-io-release.yml
+    input_mapping:
+      release-input: postgres-release
+  - put: mirror
+    params:
+      sub_dir: release-output
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: postgres-release
+    params:
+      INPUT_TYPE: bosh_io_release
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal

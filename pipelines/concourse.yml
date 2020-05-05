@@ -1,79 +1,99 @@
 ---
 resource_types:
-- name: slack-notification
+- name: slack-notifier
   type: docker-image
   source:
-    repository: cfcommunity/slack-notification-resource
-    tag: latest
+    repository: mockersf/concourse-slack-notifier
+- name: rsync
+  type: docker-image
+  source:
+    repository: trecnoc/rsync-resource
 
 resources:
-- name: pipelines-repo
+- name: pipeline-tasks
   type: git
   source:
-    uri: https://github.com/trecnoc/concourse-pipelines.git
+    uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
     branch: master
-- name: concourse-deployment-repo
+- name: concourse-bosh-deployment
   type: git
   source:
     uri: https://github.com/concourse/concourse-bosh-deployment.git
     tag_filter: v*
+- name: mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/release
 - name: notify
-  type: slack-notification
+  type: slack-notifier
   source:
     url: ((slack_hook))
-    disable: ((slack_disabled))
+    disabled: ((slack_disabled))
 
 jobs:
-- name: fetch-concourse
-  public: true
-  build_logs_to_retain: 1
+- name: mirror-concourse-releases
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: concourse-deployment-repo
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: concourse-bosh-deployment
       trigger: true
-    - task: process-concourse
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: concourse-deployment-repo
-        outputs:
-        - name: releases
-        run:
-          path: pipelines-repo/scripts/process-concourse-deployment-repo.sh
-          args:
-          - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
-          - concourse-deployment-repo
-          - releases
-    - task: transfer-releases
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: releases
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - releases
-          - /data/repo/bosh/release
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Concourse release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new Concourse release
-        silent: true
+  - task: generate-manifest
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: starkandwayne/concourse}
+      inputs:
+      - name: concourse-bosh-deployment
+      outputs:
+      - name: manifest
+      run:
+        path: /bin/bash
+        args:
+        - -c
+        - |
+          set -e
+          set -o pipefail
+
+          printf "Generating manifest for Concourse Bosh deployment version %s\n" $(cat concourse-bosh-deployment/.git/ref)
+          printf "Excluding BPM release"
+
+          cat << EOF > remove-bpm.yml
+          ---
+          - type: remove
+            path: /releases/name=bpm?
+          EOF
+
+          bosh int concourse-bosh-deployment/cluster/concourse.yml \
+            -o concourse-bosh-deployment/cluster/operations/backup-atc-colocated-web.yml \
+            -o remove-bpm.yml \
+            -l concourse-bosh-deployment/versions.yml > manifest/manifest.yml
+  - task: download-releases
+    file: pipeline-tasks/download-releases-from-manifest.yml
+  - put: mirror
+    params:
+      sub_dir: releases
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: concourse-bosh-deployment
+    params:
+      INPUT_TYPE: generic
+      LABEL: "concourse bosh deployment"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
