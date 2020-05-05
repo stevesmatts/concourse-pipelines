@@ -80,11 +80,12 @@ jobs:
     params:
       sub_dir: releases
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: concourse-bosh-deployment
     params:
-      INPUT_TYPE: concourse
+      INPUT_TYPE: generic
+      LABEL: "concourse bosh deployment"
   on_success:
     put: notify
     params:
