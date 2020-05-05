@@ -69,7 +69,7 @@ jobs:
     params:
       sub_dir: release-output
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: routing-release
     params:
@@ -102,7 +102,7 @@ jobs:
     params:
       sub_dir: release-output
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: bpm-release
     params:
@@ -134,7 +134,7 @@ jobs:
       sub_dir: stemcell
       include: "*.tgz"
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: stemcell
     params:
@@ -166,7 +166,7 @@ jobs:
       sub_dir: stemcell-lite
       include: "*.tgz"
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: stemcell-lite
     params:

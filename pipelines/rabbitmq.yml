@@ -62,7 +62,7 @@ jobs:
     params:
       sub_dir: release-output
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: cf-rabbitmq-release
     params:
@@ -98,7 +98,7 @@ jobs:
     params:
       sub_dir: release-output
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: cf-rabbitmq-multitenant-broker-release
     params:
@@ -134,7 +134,7 @@ jobs:
     params:
       sub_dir: release-output
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: cf-rabbitmq-smoke-tests-release
     params:
@@ -170,7 +170,7 @@ jobs:
     params:
       sub_dir: release-output
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: cf-cli-release
     params:

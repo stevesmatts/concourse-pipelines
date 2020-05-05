@@ -65,7 +65,7 @@ jobs:
     params:
       sub_dir: release-output
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: minio-release
     params:
@@ -96,11 +96,12 @@ jobs:
     params:
       sub_dir: mc-cli
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: mc-release
     params:
-      INPUT_TYPE: minio_cli
+      INPUT_TYPE: generic
+      LABEL: "minio cli"
   on_success:
     put: notify
     params:

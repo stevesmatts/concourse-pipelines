@@ -68,11 +68,12 @@ jobs:
     params:
       sub_dir: artifacts
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: doomsday-release
     params:
-      INPUT_TYPE: doomsday_bosh
+      INPUT_TYPE: generic
+      LABEL: "doomsday bosh release"
   on_success:
     put: notify
     params:
@@ -104,11 +105,12 @@ jobs:
     params:
       sub_dir: artifacts
   - task: generate-notification
-    file: pipeline-tasks/generate-notification.yml
+    file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: doomsday-cli
     params:
-      INPUT_TYPE: doomsday_cli
+      INPUT_TYPE: generic
+      LABEL: "doomsday cli"
   on_success:
     put: notify
     params:
