@@ -1,16 +1,19 @@
 ---
 resource_types:
-- name: slack-notification
+- name: slack-notifier
   type: docker-image
   source:
-    repository: cfcommunity/slack-notification-resource
-    tag: latest
+    repository: mockersf/concourse-slack-notifier
+- name: rsync
+  type: docker-image
+  source:
+    repository: trecnoc/rsync-resource
 
 resources:
-- name: pipelines-repo
+- name: pipeline-tasks
   type: git
   source:
-    uri: https://github.com/trecnoc/concourse-pipelines.git
+    uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
     branch: master
 - name: cf-deployment
   type: github-release
@@ -18,521 +21,511 @@ resources:
     owner: cloudfoundry
     repository: cf-deployment
     access_token: ((github_access_token))
-#- name: cf-deployment-additional
-#  type: git
-#  source:
-#    uri: https://github.com/cloudfoundry/cf-deployment.git
-#    branch: master
-#    tag_filter: "v5.5.0"
-- name: cf-mgmt-release
+- name: cf-mgmt
   type: github-release
   source:
     owner: pivotalservices
     repository: cf-mgmt
     access_token: ((github_access_token))
-- name: cf-cli-release
+- name: cf-cli
   type: github-release
   source:
     owner: cloudfoundry
     repository: cli
     access_token: ((github_access_token))
-- name: cf-top-release
+- name: top
   type: github-release
   source:
     owner: ECSTeam
     repository: cloudfoundry-top-plugin
     access_token: ((github_access_token))
-- name: buildpack-usage-release
+- name: buildpack-usage
   type: github-release
   source:
     owner: ECSTeam
     repository: buildpack-usage
     access_token: ((github_access_token))
-- name: do-all-release
+- name: do-all
   type: github-release
   source:
     owner: ECSTeam
     repository: do-all
     access_token: ((github_access_token))
-- name: stack-auditor-release
+- name: stack-auditor
   type: github-release
   source:
     owner: cloudfoundry
     repository: stack-auditor
     access_token: ((github_access_token))
+- name: release-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/release
+- name: release-notes-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/release
+- name: cf-mgmt-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/cf-mgmt
+- name: cf-cli-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/cf_cli
+- name: top-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/cf_cli/plugins/top
+- name: buildpack-usage-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/cf_cli/plugins/buildpack-usage
+- name: do-all-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/cf_cli/plugins/do-all
+- name: stack-auditor-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/cf_cli/plugins/stack-auditor
 - name: notify
-  type: slack-notification
+  type: slack-notifier
   source:
     url: ((slack_hook))
-    disable: ((slack_disabled))
+    disabled: ((slack_disabled))
+
+groups:
+- name: CF
+  jobs:
+  - mirror-cf-releases
+- name: Tools
+  jobs:
+  - mirror-cf-mgmt
+  - mirror-cf-cli
+- name: CF CLI plugins
+  jobs:
+  - mirror-top-plugin
+  - mirror-buildpack-usage-plugin
+  - mirror-do-all-plugin
+  - mirror-stack-auditor-plugin
 
 jobs:
-- name: fetch-cf
-  public: true
-  build_logs_to_retain: 1
+- name: mirror-cf-releases
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
+  - in_parallel:
+    - get: pipeline-tasks
     - get: cf-deployment
       trigger: true
       params:
         include_source_tarball: true
-    - task: process-cf
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-deployment
-        outputs:
-        - name: releases
-        run:
-          path: pipelines-repo/scripts/process-cf-deployment-release.sh
-          args:
-          - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
-          - cf-deployment
-          - pipelines-repo/scripts/ops_files
-          - releases
-    - task: transfer-cf-releases
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: releases
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - releases
-          - /data/repo/bosh/release
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new CF Deployment release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new CF Deployment release
-        silent: true
-#- name: fetch-cf-additional
-#  public: true
-#  build_logs_to_retain: 1
-#  plan:
-#  - do:
-#    - get: pipelines-repo
-#    - get: cf-deployment-additional
-#      trigger: true
-#    - task: process-cf-additional
-#      config:
-#        platform: linux
-#        image_resource:
-#          type: docker-image
-#          source: {repository: starkandwayne/concourse}
-#        inputs:
-#        - name: pipelines-repo
-#        - name: cf-deployment-additional
-#        outputs:
-#        - name: releases
-#        - name: stemcells
-#        run:
-#          path: pipelines-repo/scripts/process-cf-deployment-release-additional.sh
-#          args:
-#          - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
-#          - cf-deployment-additional
-#          - pipelines-repo/scripts/ops_files
-#          - releases
-#          - stemcells
-#    - task: transfer-cf-releases-additional
-#      config:
-#        platform: linux
-#        image_resource:
-#          type: docker-image
-#          source: {repository: trecnoc/concourse-rsync}
-#        inputs:
-#        - name: pipelines-repo
-#        - name: releases
-#        run:
-#          path: pipelines-repo/scripts/rsync.sh
-#          args:
-#          - ((rsync_server))
-#          - ((rsync_user))
-#          - ((rsync_key_base64))
-#          - releases
-#          - /data/repo/bosh/release
-#    - task: transfer-cf-stemcells-additional
-#      config:
-#        platform: linux
-#        image_resource:
-#          type: docker-image
-#          source: {repository: trecnoc/concourse-rsync}
-#        inputs:
-#        - name: pipelines-repo
-#        - name: stemcells
-#        run:
-#          path: pipelines-repo/scripts/rsync.sh
-#          args:
-#          - ((rsync_server))
-#          - ((rsync_user))
-#          - ((rsync_key_base64))
-#          - stemcells
-#          - /data/repo/bosh/stemcell
-#    on_failure:
-#      put: notify
-#      params:
-#        icon_emoji: ":skull_and_crossbones:"
-#        text: Failed to process CF Deployment Additional release
-#    on_success:
-#      put: notify
-#      params:
-#        text: Successfully processed CF Deployment Additional release
-#        silent: true
-- name: fetch-cf-mgmt-cli
-  public: true
-  build_logs_to_retain: 1
+  - task: generate-manifest
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: starkandwayne/concourse}
+      inputs:
+      - name: cf-deployment
+      outputs:
+      - name: manifest
+      run:
+        path: /bin/bash
+        args:
+        - -c
+        - |
+          set -e
+          set -o pipefail
+
+          printf "Generating manifest for CF deployment version %s\n" $(cat cf-deployment/version)
+          printf "Excluding Buildpack releases\n"
+
+          cat << EOF > remove-unnecessary-releases.yml
+          ---
+          - type: remove
+            path: /releases/name=binary-buildpack?
+          - type: remove
+            path: /releases/name=dotnet-core-buildpack?
+          - type: remove
+            path: /releases/name=go-buildpack?
+          - type: remove
+            path: /releases/name=java-buildpack?
+          - type: remove
+            path: /releases/name=nginx-buildpack?
+          - type: remove
+            path: /releases/name=nodejs-buildpack?
+          - type: remove
+            path: /releases/name=php-buildpack?
+          - type: remove
+            path: /releases/name=python-buildpack?
+          - type: remove
+            path: /releases/name=r-buildpack?
+          - type: remove
+            path: /releases/name=ruby-buildpack?
+          - type: remove
+            path: /releases/name=staticfile-buildpack?
+          EOF
+
+          tar xzf cf-deployment/source.tar.gz
+          REPO_LOCATION=cloudfoundry-cf-deployment-$(cat cf-deployment/commit_sha | cut -c 1-7 )
+
+          bosh int ${REPO_LOCATION}/cf-deployment.yml \
+            -o ${REPO_LOCATION}/operations/enable-nfs-volume-service.yml \
+            -o ${REPO_LOCATION}/operations/use-compiled-releases.yml \
+            -o ${REPO_LOCATION}/operations/backup-and-restore/enable-backup-restore.yml \
+            -o remove-unnecessary-releases.yml > manifest/manifest.yml
+  - task: download-releases
+    file: pipeline-tasks/download-releases-from-manifest.yml
+  - put: release-mirror
+    params:
+      sub_dir: releases
+  - task: copy-release-notes
+    file: pipeline-tasks/copy-github-release.yml
+    input_mapping:
+      release-input: cf-deployment
+    params:
+      SKIP_VERSION_SUBDIR: true
+      RELEASE_NOTE_PREFIX: "cf-deployment"
+  - put: release-notes-mirror
+    params:
+      sub_dir: artifacts
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: cf-deployment
+    params:
+      INPUT_TYPE: generic
+      LABEL: "cf deployment"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-cf-mgmt
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: cf-mgmt-release
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: cf-mgmt
       trigger: true
       params:
         globs:
         - "*-linux"
-    - task: process-cf-mgmt-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-mgmt-release
-        outputs:
-        - name: cf-mgmt-cli
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - cf-mgmt-release
-          - cf-mgmt-cli
-          - cf-mgmt
-          - true
-    - task: transfer-cf-mgmt-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-mgmt-cli
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - cf-mgmt-cli
-          - /data/repo/bosh
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new CF-MGMT CLI release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new CF-MGMT CLI release
-        silent: true
-- name: fetch-cf-cli
-  public: true
-  build_logs_to_retain: 1
+  - task: copy-release
+    file: pipeline-tasks/copy-github-release.yml
+    input_mapping:
+      release-input: cf-mgmt
+  - put: cf-mgmt-mirror
+    params:
+      sub_dir: artifacts
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: cf-mgmt
+    params:
+      INPUT_TYPE: generic
+      LABEL: "cf-mgmt cli"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-cf-cli
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: cf-cli-release
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: cf-cli
       trigger: true
-    - task: process-cf-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-cli-release
-        outputs:
-        - name: cf-cli
-        run:
-          path: pipelines-repo/scripts/process-cf-cli.sh
-          args:
-          - cf-cli-release
-          - cf-cli
-    - task: transfer-cf-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-cli
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - cf-cli
-          - /data/repo/cf_cli
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new CF CLI release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new CF CLI release
-        silent: true
-- name: fetch-cf-top-plugin
-  public: true
-  build_logs_to_retain: 1
+  - task: download-cli
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: starkandwayne/concourse
+      inputs:
+      - name: cf-cli
+      outputs:
+      - name: cf-cli-output
+      run:
+        path: /bin/bash
+        args:
+        - -c
+        - |
+          set -e
+          set -o pipefail
+
+          GITHUB_RELEASE=cf-cli
+          CLI_OUTPUT=cf-cli-output
+
+          VERSION=$(cat ${GITHUB_RELEASE}/version)
+          mkdir -p ${CLI_OUTPUT}/${VERSION}
+
+          printf "Downloading CF CLI client for version '%s'\n\n" ${VERSION}
+
+          printf "Linux client\n"
+          curl --progress-bar --retry 5 -Lo ${CLI_OUTPUT}/${VERSION}/cf-cli-installer_${VERSION}_x86-64.rpm "https://packages.cloudfoundry.org/stable?release=redhat64&version=${VERSION}&source=github-rel"
+          printf "Windows client\n"
+          curl --progress-bar --retry 5 -Lo ${CLI_OUTPUT}/${VERSION}/cf-cli_${VERSION}_winx64.zip "https://packages.cloudfoundry.org/stable?release=windows64-exe&version=${VERSION}&source=github-rel"
+
+          if [[ -f ${GITHUB_RELEASE}/body ]]; then
+            printf "Adding CF CLI release notes\n"
+            cp ${GITHUB_RELEASE}/body ${CLI_OUTPUT}/${VERSION}/release.md
+          fi
+  - put: cf-cli-mirror
+    params:
+      sub_dir: cf-cli-output
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: cf-cli
+    params:
+      INPUT_TYPE: generic
+      LABEL: "cf cli"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-top-plugin
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: cf-top-release
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: top
       trigger: true
       params:
         globs:
           - top-plugin-linux64
           - top-plugin64.exe
-    - task: process-cf-top-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-top-release
-        outputs:
-        - name: cf-top-plugin
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - cf-top-release
-          - cf-top-plugin
-          - top
-          - true
-    - task: transfer-cf-top-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: cf-top-plugin
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - cf-top-plugin
-          - /data/repo/cf_cli/plugins
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new CF Top CF CLI Plugin release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new CF Top CF CLI Plugin release
-        silent: true
-- name: fetch-buildpack-usage-plugin
-  public: true
-  build_logs_to_retain: 1
+  - task: copy-release
+    file: pipeline-tasks/copy-github-release.yml
+    input_mapping:
+      release-input: top
+  - put: top-mirror
+    params:
+      sub_dir: artifacts
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: top
+    params:
+      INPUT_TYPE: generic
+      LABEL: "top cf plugin"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-buildpack-usage-plugin
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: buildpack-usage-release
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: buildpack-usage
       trigger: true
       params:
         globs:
           - buildpack-usage-linux
           - buildpack-usage-windows.exe
-    - task: process-buildpack-usage-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: buildpack-usage-release
-        outputs:
-        - name: buildpack-usage-plugin
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - buildpack-usage-release
-          - buildpack-usage-plugin
-          - buildpack-usage
-          - true
-    - task: transfer-buildpack-usage-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: buildpack-usage-plugin
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - buildpack-usage-plugin
-          - /data/repo/cf_cli/plugins
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Buildpack Usage CF CLI Plugin release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new Buildpack Usage CF CLI Plugin release
-        silent: true
-- name: fetch-do-all-plugin
-  public: true
-  build_logs_to_retain: 1
+  - task: copy-release
+    file: pipeline-tasks/copy-github-release.yml
+    input_mapping:
+      release-input: buildpack-usage
+  - put: buildpack-usage-mirror
+    params:
+      sub_dir: artifacts
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: buildpack-usage
+    params:
+      INPUT_TYPE: generic
+      LABEL: "buildpack-usage cf plugin"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-do-all-plugin
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: do-all-release
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: do-all
       trigger: true
       params:
         globs:
           - do-all-linux-amd64
           - do-all-windows-amd64.exe
-    - task: process-do-all-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: do-all-release
-        outputs:
-        - name: do-all-plugin
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - do-all-release
-          - do-all-plugin
-          - do-all
-          - true
-    - task: transfer-do-all-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: do-all-plugin
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - do-all-plugin
-          - /data/repo/cf_cli/plugins
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Do-All CF CLI Plugin release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new Do-All CF CLI Plugin release
-        silent: true
-- name: fetch-stack-auditor-plugin
-  public: true
-  build_logs_to_retain: 1
+  - task: copy-release
+    file: pipeline-tasks/copy-github-release.yml
+    input_mapping:
+      release-input: do-all
+  - put: do-all-mirror
+    params:
+      sub_dir: artifacts
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: do-all
+    params:
+      INPUT_TYPE: generic
+      LABEL: "do-all cf plugin"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-stack-auditor-plugin
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: stack-auditor-release
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: stack-auditor
       trigger: true
       params:
         globs:
           - stack-auditor-*-linux.tgz
           - stack-auditor-*-windows.zip
-    - task: process-stack-auditor-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: stack-auditor-release
-        outputs:
-        - name: stack-auditor-plugin
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - stack-auditor-release
-          - stack-auditor-plugin
-          - stack-auditor
-          - true
-    - task: transfer-stack-auditor-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: stack-auditor-plugin
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - stack-auditor-plugin
-          - /data/repo/cf_cli/plugins
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Stack Auditor CF CLI Plugin release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new Stack Auditor CF CLI Plugin release
-        silent: true
+  - task: copy-release
+    file: pipeline-tasks/copy-github-release.yml
+    input_mapping:
+      release-input: stack-auditor
+  - task: extract-plugins
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: starkandwayne/concourse}
+      inputs:
+      - name: artifacts
+      outputs:
+      - name: artifacts-extracted
+      run:
+        path: /bin/bash
+        args:
+        - -c
+        - |
+          set -e
+          set -o pipefail
+
+          printf "Copying all artifacts\n"
+          cp -r artifacts/* artifacts-extracted
+
+          pushd artifacts-extracted > /dev/null
+
+          find . -name '*.tgz' | while read file; do
+            printf "Extracting '%s'\n" ${file}
+            pushd $(dirname ${file}) > /dev/null
+            tar -xf $(basename ${file})
+            rm $(basename ${file})
+            popd > /dev/null
+          done
+
+          find . -name '*.zip' | while read file; do
+            printf "Extracting '%s'\n" ${file}
+            pushd $(dirname ${file}) > /dev/null
+            unzip -q $(basename ${file})
+            rm $(basename ${file})
+            popd > /dev/null
+          done
+
+          popd > /dev/null
+  - put: stack-auditor-mirror
+    params:
+      sub_dir: artifacts-extracted
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: stack-auditor
+    params:
+      INPUT_TYPE: generic
+      LABEL: "stack-auditor cf plugin"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
