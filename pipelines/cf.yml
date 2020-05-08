@@ -468,49 +468,11 @@ jobs:
     file: pipeline-tasks/copy-github-release.yml
     input_mapping:
       release-input: stack-auditor
-  - task: extract-plugins
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: {repository: starkandwayne/concourse}
-      inputs:
-      - name: artifacts
-      outputs:
-      - name: artifacts-extracted
-      run:
-        path: /bin/bash
-        args:
-        - -c
-        - |
-          set -e
-          set -o pipefail
-
-          printf "Copying all artifacts\n"
-          cp -r artifacts/* artifacts-extracted
-
-          pushd artifacts-extracted > /dev/null
-
-          find . -name '*.tgz' | while read file; do
-            printf "Extracting '%s'\n" ${file}
-            pushd $(dirname ${file}) > /dev/null
-            tar -xf $(basename ${file})
-            rm $(basename ${file})
-            popd > /dev/null
-          done
-
-          find . -name '*.zip' | while read file; do
-            printf "Extracting '%s'\n" ${file}
-            pushd $(dirname ${file}) > /dev/null
-            unzip -q $(basename ${file})
-            rm $(basename ${file})
-            popd > /dev/null
-          done
-
-          popd > /dev/null
+    params:
+      UNCOMPRESS_ARTIFACTS: true
   - put: stack-auditor-mirror
     params:
-      sub_dir: artifacts-extracted
+      sub_dir: artifacts
   - task: generate-notification
     file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:

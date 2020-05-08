@@ -1,5 +1,0 @@
----
-- type: remove
-  path: /releases/name=bosh?
-- type: remove
-  path: /releases/name=os-conf?
