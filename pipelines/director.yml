@@ -1,290 +1,385 @@
 ---
 resource_types:
-- name: slack-notification
+- name: slack-notifier
   type: docker-image
   source:
-    repository: cfcommunity/slack-notification-resource
-    tag: latest
+    repository: mockersf/concourse-slack-notifier
+- name: rsync
+  type: docker-image
+  source:
+    repository: trecnoc/rsync-resource
 
 resources:
-- name: pipelines-repo
+- name: pipeline-tasks
   type: git
   source:
-    uri: https://github.com/trecnoc/concourse-pipelines.git
+    uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
     branch: master
-- name: bosh-deployment-repo
+- name: bosh-deployment
   type: git
   source:
     uri: https://github.com/cloudfoundry/bosh-deployment.git
     branch: master
-- name: bosh-cli-release
+    paths:
+    - bosh.yml
+    - vsphere/cpi.yml
+    - misc/dns.yml
+    - misc/ntp.yml
+    - uaa.yml
+    - credhub.yml
+    - jumpbox-user.yml
+    - bbr.yml
+- name: bosh-lite-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh-deployment.git
+    branch: master
+    paths:
+    - bosh.yml
+    - virtualbox/cpi.yml
+    - bosh-lite.yml
+- name: cli
   type: github-release
   source:
     owner: cloudfoundry
     repository: bosh-cli
     access_token: ((github_access_token))
-- name: credhub-cli-release
+- name: credhub
   type: github-release
   source:
     owner: cloudfoundry-incubator
     repository: credhub-cli
     access_token: ((github_access_token))
-- name: bbr-release
+- name: bbr
   type: github-release
   source:
     owner: cloudfoundry-incubator
     repository: bosh-backup-and-restore
     access_token: ((github_access_token))
+- name: bosh-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/release
+- name: bosh-lite-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/release
+- name: cli-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/bosh-cli
+- name: credhub-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/credhub
+- name: bbr-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/bosh/bbr
 - name: notify
-  type: slack-notification
+  type: slack-notifier
   source:
     url: ((slack_hook))
-    disable: ((slack_disabled))
+    disabled: ((slack_disabled))
+
+groups:
+- name: Director
+  jobs:
+  - mirror-bosh-releases
+  - mirror-bosh-lite-releases
+- name: Tools
+  jobs:
+  - mirror-cli
+  - mirror-credhub
+  - mirror-bbr
 
 jobs:
-- name: fetch-director
-  public: true
-  build_logs_to_retain: 1
+- name: mirror-bosh-releases
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: bosh-deployment-repo
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: bosh-deployment
       trigger: true
-    - task: process-director
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: bosh-deployment-repo
-        outputs:
-        - name: releases
-        - name: stemcells
-        run:
-          path: pipelines-repo/scripts/process-bosh-deployment-repo.sh
-          args:
-          - pipelines-repo/scripts/fetch-bosh-releases-from-manifest.sh
-          - bosh-deployment-repo
-          - pipelines-repo/scripts/ops_files
-          - releases
-          - stemcells
-    - task: transfer-releases
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: releases
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - releases
-          - /data/repo/bosh/release
-    - task: transfer-stemcells
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: stemcells
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - stemcells
-          - /data/repo/bosh/stemcell
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Bosh Director release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new Bosh Director release
-        silent: true
-- name: fetch-bosh-cli
-  public: true
-  build_logs_to_retain: 1
+  - task: generate-manifest
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: starkandwayne/concourse}
+      inputs:
+      - name: bosh-deployment
+      outputs:
+      - name: manifest
+      run:
+        path: /bin/bash
+        args:
+        - -c
+        - |
+          set -e
+          set -o pipefail
+
+          printf "Generating manifest for Bosh deployment commit: %s\n" $(cat bosh-deployment/.git/ref)
+          printf "Excluding BPM release"
+
+          cat << EOF > remove-unnecessary-releases.yml
+          ---
+          - type: remove
+            path: /releases/name=bpm?
+          EOF
+
+          bosh int bosh-deployment/bosh.yml \
+            -o bosh-deployment/vsphere/cpi.yml \
+            -o bosh-deployment/misc/dns.yml \
+            -o bosh-deployment/misc/ntp.yml \
+            -o bosh-deployment/uaa.yml \
+            -o bosh-deployment/credhub.yml \
+            -o bosh-deployment/jumpbox-user.yml \
+            -o bosh-deployment/bbr.yml \
+            -o remove-unnecessary-releases.yml > manifest/manifest.yml
+  - task: download-releases
+    file: pipeline-tasks/download-releases-from-manifest.yml
+  - put: bosh-mirror
+    params:
+      sub_dir: releases
+  - task: generate-notification
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: starkandwayne/concourse}
+      outputs:
+      - name: notification
+      run:
+        path: /bin/bash
+        args:
+        - -c
+        - |
+          set -e
+          set -o pipefail
+
+          cat << EOF > notification/message.txt
+          Successfully mirrored latest Bosh Director releases
+          EOF
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-bosh-lite-releases
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: bosh-cli-release
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: bosh-lite-deployment
+      trigger: true
+  - task: generate-manifest
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: starkandwayne/concourse}
+      inputs:
+      - name: bosh-lite-deployment
+      outputs:
+      - name: manifest
+      run:
+        path: /bin/bash
+        args:
+        - -c
+        - |
+          set -e
+          set -o pipefail
+
+          printf "Generating manifest for Bosh Lite deployment commit: %s\n" $(cat bosh-lite-deployment/.git/ref)
+          printf "Excluding releases included in normal Bosh deployment"
+
+          cat << EOF > remove-unnecessary-releases.yml
+          ---
+          - type: remove
+            path: /releases/name=bosh?
+          - type: remove
+            path: /releases/name=os-conf?
+          - type: remove
+            path: /releases/name=bpm?
+          EOF
+
+          bosh int bosh-lite-deployment/bosh.yml \
+            -o bosh-lite-deployment/virtualbox/cpi.yml \
+            -o bosh-lite-deployment/bosh-lite.yml \
+            -o remove-unnecessary-releases.yml > manifest/manifest.yml
+  - task: download-releases
+    file: pipeline-tasks/download-releases-from-manifest.yml
+  - put: bosh-lite-mirror
+    params:
+      sub_dir: releases
+  - task: generate-notification
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: starkandwayne/concourse}
+      outputs:
+      - name: notification
+      run:
+        path: /bin/bash
+        args:
+        - -c
+        - |
+          set -e
+          set -o pipefail
+
+          cat << EOF > notification/message.txt
+          Successfully mirrored latest Bosh Lite Director releases
+          EOF
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-cli
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
+  plan:
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: cli
       trigger: true
       params:
         globs:
         - "bosh-cli-*-linux-amd64"
         - "bosh-cli-*-windows-amd64.exe"
-    - task: process-bosh-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: bosh-cli-release
-        outputs:
-        - name: bosh-cli
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - bosh-cli-release
-          - bosh-cli
-          - bosh-cli
-          - true
-    - task: transfer-bosh-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: bosh-cli
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - bosh-cli
-          - /data/repo/bosh
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Bosh CLI release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new Bosh CLI release
-        silent: true
-- name: fetch-credhub-cli
-  public: true
-  build_logs_to_retain: 1
+  - task: copy-release
+    file: pipeline-tasks/copy-github-release.yml
+    input_mapping:
+      release-input: cli
+  - put: cli-mirror
+    params:
+      sub_dir: artifacts
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: cli
+    params:
+      INPUT_TYPE: generic
+      LABEL: "bosh cli"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-credhub
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: credhub-cli-release
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: credhub
       trigger: true
       params:
         globs:
         - "credhub-linux-*.tgz"
         - "credhub-windows-*.tgz"
-    - task: process-credhub-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: credhub-cli-release
-        outputs:
-        - name: credhub-cli
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - credhub-cli-release
-          - credhub-cli
-          - credhub
-          - true
-    - task: transfer-credhub-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: credhub-cli
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - credhub-cli
-          - /data/repo/bosh
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new Credhub CLI release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new Credhub CLI release
-        silent: true
-- name: fetch-bbr-cli
-  public: true
-  build_logs_to_retain: 1
+  - task: copy-release
+    file: pipeline-tasks/copy-github-release.yml
+    input_mapping:
+      release-input: credhub
+    params:
+      UNCOMPRESS_ARTIFACTS: true
+  - put: credhub-mirror
+    params:
+      sub_dir: artifacts
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: credhub
+    params:
+      INPUT_TYPE: generic
+      LABEL: "credhub cli"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-bbr
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
   plan:
-  - do:
-    - get: pipelines-repo
-    - get: bbr-release
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: bbr
       trigger: true
       params:
         globs:
-        - "bbr-*.tar"
-    - task: process-bbr-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: starkandwayne/concourse}
-        inputs:
-        - name: pipelines-repo
-        - name: bbr-release
-        outputs:
-        - name: bbr-cli
-        run:
-          path: pipelines-repo/scripts/copy-github-release.sh
-          args:
-          - bbr-release
-          - bbr-cli
-          - bbr
-          - true
-    - task: transfer-bbr-cli
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: trecnoc/concourse-rsync}
-        inputs:
-        - name: pipelines-repo
-        - name: bbr-cli
-        run:
-          path: pipelines-repo/scripts/rsync.sh
-          args:
-          - ((rsync_server))
-          - ((rsync_user))
-          - ((rsync_key_base64))
-          - bbr-cli
-          - /data/repo/bosh
-    on_failure:
-      put: notify
-      params:
-        icon_emoji: ":skull_and_crossbones:"
-        text: Failed to process new BBR CLI release
-        silent: true
-    on_success:
-      put: notify
-      params:
-        text: Successfully processed new BBR CLI release
-        silent: true
+        - "bbr-*-linux-amd64"
+  - task: copy-release
+    file: pipeline-tasks/copy-github-release.yml
+    input_mapping:
+      release-input: bbr
+  - put: bbr-mirror
+    params:
+      sub_dir: artifacts
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: bbr
+    params:
+      INPUT_TYPE: generic
+      LABEL: "bbr cli"
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal

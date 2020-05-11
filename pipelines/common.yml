@@ -23,6 +23,10 @@ resources:
   type: bosh-io-release
   source:
     repository: cloudfoundry/bpm-release
+- name: dns-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry/bosh-dns-release
 - name: stemcell
   type: bosh-io-stemcell
   source:
@@ -50,6 +54,17 @@ resources:
   source:
     url: ((slack_hook))
     disabled: ((slack_disabled))
+
+groups:
+- name: Releases
+  jobs:
+  - mirror-routing-release
+  - mirror-bpm-release
+  - mirror-dns-release
+- name: Stemcells
+  jobs:
+  - mirror-stemcell
+  - mirror-stemcell-lite
 
 jobs:
 - name: mirror-routing-release
@@ -105,6 +120,39 @@ jobs:
     file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
       content-input: bpm-release
+    params:
+      INPUT_TYPE: bosh_io_release
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-dns-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
+  plan:
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: dns-release
+      trigger: true
+  - task: rename-release
+    file: pipeline-tasks/rename-bosh-io-release.yml
+    input_mapping:
+      release-input: dns-release
+  - put: release-mirror
+    params:
+      sub_dir: release-output
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: dns-release
     params:
       INPUT_TYPE: bosh_io_release
   on_success:
