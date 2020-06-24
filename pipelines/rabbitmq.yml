@@ -85,11 +85,8 @@ jobs:
   plan:
   - in_parallel:
     - get: pipeline-tasks
-    - get: cf-rabbitmq-release
-      passed:
-        - mirror-rabbitmq-release
-      trigger: true
     - get: cf-rabbitmq-multitenant-broker-release
+      trigger: true
   - task: rename-release
     file: pipeline-tasks/rename-bosh-io-release.yml
     input_mapping:
@@ -121,11 +118,8 @@ jobs:
   plan:
   - in_parallel:
     - get: pipeline-tasks
-    - get: cf-rabbitmq-release
-      passed:
-        - mirror-rabbitmq-release
-      trigger: true
     - get: cf-rabbitmq-smoke-tests-release
+      trigger: true
   - task: rename-release
     file: pipeline-tasks/rename-bosh-io-release.yml
     input_mapping:
@@ -157,11 +151,8 @@ jobs:
   plan:
   - in_parallel:
     - get: pipeline-tasks
-    - get: cf-rabbitmq-release
-      passed:
-        - mirror-rabbitmq-release
-      trigger: true
     - get: cf-cli-release
+      trigger: true
   - task: rename-release
     file: pipeline-tasks/rename-bosh-io-release.yml
     input_mapping:
