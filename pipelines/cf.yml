@@ -33,6 +33,13 @@ resources:
     owner: cloudfoundry
     repository: cli
     access_token: ((github_access_token))
+- name: stratos-release
+  type: github-release
+  source:
+    owner: cloudfoundry
+    repository: stratos
+    access_token: ((github_access_token))
+    tag_filter: "\\d+[.]\\d+[.]\\d+"
 - name: top
   type: github-release
   source:
@@ -85,6 +92,13 @@ resources:
     username: ((rsync_user))
     private_key: ((rsync_key))
     base_dir: /data/repo/cf_cli
+- name: stratos-mirror
+  type: rsync
+  source:
+    server: ((rsync_server))
+    username: ((rsync_user))
+    private_key: ((rsync_key))
+    base_dir: /data/repo/stratos    
 - name: top-mirror
   type: rsync
   source:
@@ -120,14 +134,15 @@ resources:
     disabled: ((slack_disabled))
 
 groups:
-- name: CF
+- name: cf
   jobs:
   - mirror-cf-releases
-- name: Tools
+- name: tools
   jobs:
   - mirror-cf-mgmt
   - mirror-cf-cli
-- name: CF CLI plugins
+  - package-stratos
+- name: cli-plugins
   jobs:
   - mirror-top-plugin
   - mirror-buildpack-usage-plugin
@@ -337,6 +352,35 @@ jobs:
     params:
       alert_type: failed
       mode: normal
+- name: package-stratos
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
+  plan:
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: stratos-release
+      trigger: true
+      params:
+        include_source_tarball: true
+        globs:
+          - NO_MATCH_GLOB
+  - task: package
+    file: pipeline-tasks/stratos-package.yml
+  - put: stratos-mirror
+    params:
+      sub_dir: stratos
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification-output/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal      
 - name: mirror-top-plugin
   build_log_retention:
     days: 7
