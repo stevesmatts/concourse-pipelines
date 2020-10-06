@@ -1,6 +1,0 @@
-nexus-buildpack-regexp: "buildpacks/dotnet-core_buildpack-cached-cflinuxfs3-v(.*).zip"
-nexus-bosh-regexp: "bosh/release/dotnet-core-buildpack-release-(.*).tgz"
-buildpack-git-repository: <ENTER DOTNET CORE BUILDPACK BOSH REPO>
-buildpack-git-branch: master
-buildpack-blob-name: dotnet-core-buildpack
-buildpack-blob-regexp: "dotnet-core-buildpack/dotnet-core_buildpack-cached-cflinuxfs3-v(.*).zip"

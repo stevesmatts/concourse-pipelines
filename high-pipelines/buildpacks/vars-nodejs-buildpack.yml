@@ -1,6 +1,0 @@
-nexus-buildpack-regexp: "buildpacks/nodejs_buildpack-cached-cflinuxfs3-v(.*).zip"
-nexus-bosh-regexp: "bosh/release/nodejs-buildpack-release-(.*).tgz"
-buildpack-git-repository: <ENTER NODEJS BUILDPACK BOSH REPO>
-buildpack-git-branch: master
-buildpack-blob-name: nodejs-buildpack
-buildpack-blob-regexp: "nodejs-buildpack/nodejs_buildpack-cached-cflinuxfs3-v(.*).zip"

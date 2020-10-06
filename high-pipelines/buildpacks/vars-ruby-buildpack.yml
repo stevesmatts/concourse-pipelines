@@ -1,6 +1,0 @@
-nexus-buildpack-regexp: "buildpacks/ruby_buildpack-cached-cflinuxfs3-v(.*).zip"
-nexus-bosh-regexp: "bosh/release/ruby-buildpack-release-(.*).tgz"
-buildpack-git-repository: <ENTER RUBY BUILDPACK BOSH REPO>
-buildpack-git-branch: master
-buildpack-blob-name: ruby-buildpack
-buildpack-blob-regexp: "ruby-buildpack/ruby_buildpack-cached-cflinuxfs3-v(.*).zip"

@@ -1,6 +1,0 @@
-nexus-buildpack-regexp: "buildpacks/staticfile_buildpack-cached-cflinuxfs3-v(.*).zip"
-nexus-bosh-regexp: "bosh/release/staticfile-buildpack-release-(.*).tgz"
-buildpack-git-repository: <ENTER STATICFILE BUILDPACK BOSH REPO>
-buildpack-git-branch: master
-buildpack-blob-name: staticfile-buildpack
-buildpack-blob-regexp: "staticfile-buildpack/staticfile_buildpack-cached-cflinuxfs3-v(.*).zip"

@@ -1,0 +1,88 @@
+---
+resource_types:
+  - name: slack-notifier
+    type: docker-image
+    source:
+      repository: mockersf/concourse-slack-notifier
+  - name: nexus
+    type: docker-image
+    source:
+      repository: trecnoc/nexus-resource
+      tag: latest
+
+resources:
+  - name: source-artifact
+    type: nexus
+    source:
+      url: ((nexus-url))
+      username: ((nexus-username))
+      password: ((nexus-password))
+      timeout: 60
+      repository: raw-group
+      group: "/source"
+      regexp: "source/artifact-(.*).txt"
+  - name: target-artifact
+    type: nexus
+    source:
+      url: ((nexus-url))
+      username: ((nexus-username))
+      password: ((nexus-password))
+      timeout: 60
+      repository: "raw-hosted"
+      group: "/target"
+      regexp: "target/artifact-(.*).txt"
+  - name: notify
+    type: slack-notifier
+    source:
+      url: ((slack_hook))
+
+jobs:
+  - name: copy-artifact
+    build_log_retention:
+      builds: 10
+      minimum_succeeded_builds: 1
+    plan:
+      - get: source-artifact
+        trigger: true
+      - task: copy
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: starkandwayne/concourse
+          inputs:
+            - name: source-artifact
+          outputs:
+            - name: copied-artifact
+            - name: notification
+          run:
+            path: /bin/bash
+            args:
+              - -c
+              - |
+                set -e
+                set -o pipefail
+
+                VERSION=$(cat source-artifact/version)
+
+                cp source-artifact/*.txt copied-artifact/
+
+                cat << EOF > notification/message.txt
+                Successfully transfered artifact version ${VERSION}
+                EOF
+      - put: target-artifact
+        params:
+          file: copied-artifact/*.txt
+    on_success:
+      put: notify
+      params:
+        alert_type: success
+        mode: concise
+        message_file: notification/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: concise
+        message: Failed transferring artifact
