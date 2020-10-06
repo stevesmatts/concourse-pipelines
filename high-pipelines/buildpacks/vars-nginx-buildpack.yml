@@ -1,6 +1,0 @@
-nexus-buildpack-regexp: "buildpacks/nginx_buildpack-cached-cflinuxfs3-v(.*).zip"
-nexus-bosh-regexp: "bosh/release/nginx-buildpack-release-(.*).tgz"
-buildpack-git-repository: <ENTER NGINX BUILDPACK BOSH REPO>
-buildpack-git-branch: master
-buildpack-blob-name: nginx-buildpack
-buildpack-blob-regexp: "nginx-buildpack/nginx_buildpack-cached-cflinuxfs3-v(.*).zip"

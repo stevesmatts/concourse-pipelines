@@ -1,6 +1,0 @@
-nexus-buildpack-regexp: "buildpacks/python_buildpack-cached-cflinuxfs3-v(.*).zip"
-nexus-bosh-regexp: "bosh/release/python-buildpack-release-(.*).tgz"
-buildpack-git-repository: <ENTER PYTHON BUILDPACK BOSH REPO>
-buildpack-git-branch: master
-buildpack-blob-name: python-buildpack
-buildpack-blob-regexp: "python-buildpack/python_buildpack-cached-cflinuxfs3-v(.*).zip"
