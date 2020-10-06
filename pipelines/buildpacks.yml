@@ -1,438 +1,654 @@
 ---
 resource_types:
-- name: slack-notifier
-  type: docker-image
-  source:
-    repository: mockersf/concourse-slack-notifier
-- name: rsync
-  type: docker-image
-  source:
-    repository: trecnoc/rsync-resource
+  - name: slack-notifier
+    type: docker-image
+    source:
+      repository: mockersf/concourse-slack-notifier
+  - name: rsync
+    type: docker-image
+    source:
+      repository: trecnoc/rsync-resource
 
 resources:
-- name: pipeline-tasks
-  type: git
-  source:
-    uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
-    branch: master
-- name: binary-buildpack
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: binary-buildpack
-    access_token: ((github_access_token))
-- name: dotnet-core-buildpack
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: dotnet-core-buildpack
-    access_token: ((github_access_token))
-- name: go-buildpack
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: go-buildpack
-    access_token: ((github_access_token))
-- name: java-buildpack
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: java-buildpack
-    access_token: ((github_access_token))
-- name: nginx-buildpack
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: nginx-buildpack
-    access_token: ((github_access_token))
-- name: nodejs-buildpack
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: nodejs-buildpack
-    access_token: ((github_access_token))
-- name: php-buildpack
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: php-buildpack
-    access_token: ((github_access_token))
-- name: python-buildpack
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: python-buildpack
-    access_token: ((github_access_token))
-- name: r-buildpack
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: r-buildpack
-    access_token: ((github_access_token))
-- name: ruby-buildpack
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: ruby-buildpack
-    access_token: ((github_access_token))
-- name: staticfile-buildpack
-  type: github-release
-  source:
-    owner: cloudfoundry
-    repository: staticfile-buildpack
-    access_token: ((github_access_token))
-- name: mirror
-  type: rsync
-  source:
-    server: ((rsync_server))
-    username: ((rsync_user))
-    private_key: ((rsync_key))
-    base_dir: /data/repo/buildpacks
-- name: notify
-  type: slack-notifier
-  source:
-    url: ((slack_hook))
-    disabled: ((slack_disabled))
+  - name: pipeline-tasks
+    type: git
+    source:
+      uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
+      branch: master
+  - name: binary-buildpack
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: binary-buildpack
+      access_token: ((github_access_token))
+  - name: binary-buildpack-bosh-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/binary-buildpack-release.git
+      branch: master
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: dotnet-core-buildpack
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: dotnet-core-buildpack
+      access_token: ((github_access_token))
+  - name: dotnet-core-buildpack-bosh-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/dotnet-core-buildpack-release.git
+      branch: master
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: go-buildpack
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: go-buildpack
+      access_token: ((github_access_token))
+  - name: go-buildpack-bosh-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/go-buildpack-release.git
+      branch: master
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: java-buildpack
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: java-buildpack
+      access_token: ((github_access_token))
+  - name: java-buildpack-bosh-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/java-buildpack-release.git
+      branch: master
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: nginx-buildpack
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: nginx-buildpack
+      access_token: ((github_access_token))
+  - name: nginx-buildpack-bosh-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/nginx-buildpack-release.git
+      branch: master
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: nodejs-buildpack
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: nodejs-buildpack
+      access_token: ((github_access_token))
+  - name: nodejs-buildpack-bosh-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/nodejs-buildpack-release.git
+      branch: master
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: php-buildpack
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: php-buildpack
+      access_token: ((github_access_token))
+  - name: php-buildpack-bosh-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/php-buildpack-release.git
+      branch: master
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: python-buildpack
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: python-buildpack
+      access_token: ((github_access_token))
+  - name: python-buildpack-bosh-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/python-buildpack-release.git
+      branch: master
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: r-buildpack
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: r-buildpack
+      access_token: ((github_access_token))
+  - name: r-buildpack-bosh-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/r-buildpack-release.git
+      branch: master
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: ruby-buildpack
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: ruby-buildpack
+      access_token: ((github_access_token))
+  - name: ruby-buildpack-bosh-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/ruby-buildpack-release.git
+      branch: master
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: staticfile-buildpack
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: staticfile-buildpack
+      access_token: ((github_access_token))
+  - name: staticfile-buildpack-bosh-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/staticfile-buildpack-release.git
+      branch: master
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: mirror-buildpack
+    type: rsync
+    source:
+      server: ((rsync_server))
+      username: ((rsync_user))
+      private_key: ((rsync_key))
+      base_dir: /data/repo/buildpacks
+  - name: mirror-bosh-release
+    type: rsync
+    source:
+      server: ((rsync_server))
+      username: ((rsync_user))
+      private_key: ((rsync_key))
+      base_dir: /data/repo/bosh/release
+  - name: notify
+    type: slack-notifier
+    source:
+      url: ((slack_hook))
+      disabled: ((slack_disabled))
 
 jobs:
-- name: package-binary-buildpack
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: binary-buildpack
-      trigger: true
+  - name: package-binary-buildpack
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: binary-buildpack
+            trigger: true
+            params:
+              include_source_tarball: true
+              globs:
+                - NO_MATCH_GLOB
+          - get: binary-buildpack-bosh-repo
+      - task: package-binary-buildpack
+        file: pipeline-tasks/package-cached-buildpack.yml
+        input_mapping:
+          buildpack-release: binary-buildpack
+      - task: release-binary-buildpack
+        file: pipeline-tasks/create-buildpack-release.yml
+        input_mapping:
+          buildpack-release: binary-buildpack
+          buildpack-bosh-repository: binary-buildpack-bosh-repo
+          cached-buildpack: buildpack
+        params:
+          BLOB_PATH: binary-buildpack
+      - put: mirror-buildpack
+        params:
+          sub_dir: buildpack
+      - put: mirror-bosh-release
+        params:
+          sub_dir: bosh-release
+    on_success:
+      put: notify
       params:
-        include_source_tarball: true
-        globs:
-          - NO_MATCH_GLOB
-  - task: package-binary-buildpack
-    file: pipeline-tasks/package-cached-buildpack.yml
-    input_mapping:
-      buildpack-release: binary-buildpack
-  - put: mirror
-    params:
-      sub_dir: buildpack
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification-output/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
-- name: package-dotnet-core-buildpack
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: dotnet-core-buildpack
-      trigger: true
+        alert_type: success
+        mode: concise
+        message_file: notification-output/message.txt
+    on_failure:
+      put: notify
       params:
-        include_source_tarball: true
-        globs:
-          - NO_MATCH_GLOB
-  - task: package-dotnet-core-buildpack
-    file: pipeline-tasks/package-cached-buildpack.yml
-    input_mapping:
-      buildpack-release: dotnet-core-buildpack
-  - put: mirror
-    params:
-      sub_dir: buildpack
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification-output/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
-- name: package-go-buildpack
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: go-buildpack
-      trigger: true
+        alert_type: failed
+        mode: normal
+  - name: package-dotnet-core-buildpack
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: dotnet-core-buildpack
+            trigger: true
+            params:
+              include_source_tarball: true
+              globs:
+                - NO_MATCH_GLOB
+          - get: dotnet-core-buildpack-bosh-repo
+      - task: package-dotnet-core-buildpack
+        file: pipeline-tasks/package-cached-buildpack.yml
+        input_mapping:
+          buildpack-release: dotnet-core-buildpack
+      - task: release-dotnet-core-buildpack
+        file: pipeline-tasks/create-buildpack-release.yml
+        input_mapping:
+          buildpack-release: dotnet-core-buildpack
+          buildpack-bosh-repository: dotnet-core-buildpack-bosh-repo
+          cached-buildpack: buildpack
+        params:
+          BLOB_PATH: dotnet-core-buildpack
+      - put: mirror-buildpack
+        params:
+          sub_dir: buildpack
+      - put: mirror-bosh-release
+        params:
+          sub_dir: bosh-release
+    on_success:
+      put: notify
       params:
-        include_source_tarball: true
-        globs:
-          - NO_MATCH_GLOB
-  - task: package-go-buildpack
-    file: pipeline-tasks/package-cached-buildpack.yml
-    input_mapping:
-      buildpack-release: go-buildpack
-  - put: mirror
-    params:
-      sub_dir: buildpack
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification-output/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
-- name: package-java-buildpack
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: java-buildpack
-      trigger: true
+        alert_type: success
+        mode: concise
+        message_file: notification-output/message.txt
+    on_failure:
+      put: notify
       params:
-        include_source_tarball: true
-        globs:
-          - NO_MATCH_GLOB
-  - task: package-java-buildpack
-    file: pipeline-tasks/package-cached-java-buildpack.yml
-    input_mapping:
-      buildpack-release: java-buildpack
-  - put: mirror
-    params:
-      sub_dir: buildpack
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification-output/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
-- name: package-nginx-buildpack
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: nginx-buildpack
-      trigger: true
+        alert_type: failed
+        mode: normal
+  - name: package-go-buildpack
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: go-buildpack
+            trigger: true
+            params:
+              include_source_tarball: true
+              globs:
+                - NO_MATCH_GLOB
+          - get: go-buildpack-bosh-repo
+      - task: package-go-buildpack
+        file: pipeline-tasks/package-cached-buildpack.yml
+        input_mapping:
+          buildpack-release: go-buildpack
+      - task: release-go-buildpack
+        file: pipeline-tasks/create-buildpack-release.yml
+        input_mapping:
+          buildpack-release: go-buildpack
+          buildpack-bosh-repository: go-buildpack-bosh-repo
+          cached-buildpack: buildpack
+        params:
+          BLOB_PATH: go-buildpack
+      - put: mirror-buildpack
+        params:
+          sub_dir: buildpack
+      - put: mirror-bosh-release
+        params:
+          sub_dir: bosh-release
+    on_success:
+      put: notify
       params:
-        include_source_tarball: true
-        globs:
-          - NO_MATCH_GLOB
-  - task: package-nginx-buildpack
-    file: pipeline-tasks/package-cached-buildpack.yml
-    input_mapping:
-      buildpack-release: nginx-buildpack
-  - put: mirror
-    params:
-      sub_dir: buildpack
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification-output/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
-- name: package-nodejs-buildpack
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: nodejs-buildpack
-      trigger: true
+        alert_type: success
+        mode: concise
+        message_file: notification-output/message.txt
+    on_failure:
+      put: notify
       params:
-        include_source_tarball: true
-        globs:
-          - NO_MATCH_GLOB
-  - task: package-nodejs-buildpack
-    file: pipeline-tasks/package-cached-buildpack.yml
-    input_mapping:
-      buildpack-release: nodejs-buildpack
-  - put: mirror
-    params:
-      sub_dir: buildpack
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification-output/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
-- name: package-php-buildpack
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: php-buildpack
-      trigger: true
+        alert_type: failed
+        mode: normal
+  - name: package-java-buildpack
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: java-buildpack
+            trigger: true
+            params:
+              include_source_tarball: true
+              globs:
+                - NO_MATCH_GLOB
+          - get: java-buildpack-bosh-repo
+      - task: package-java-buildpack
+        file: pipeline-tasks/package-cached-java-buildpack.yml
+        input_mapping:
+          buildpack-release: java-buildpack
+      - task: release-java-buildpack
+        file: pipeline-tasks/create-buildpack-release.yml
+        input_mapping:
+          buildpack-release: java-buildpack
+          buildpack-bosh-repository: java-buildpack-bosh-repo
+          cached-buildpack: buildpack
+        params:
+          BLOB_PATH: java-buildpack
+      - put: mirror-buildpack
+        params:
+          sub_dir: buildpack
+      - put: mirror-bosh-release
+        params:
+          sub_dir: bosh-release
+    on_success:
+      put: notify
       params:
-        include_source_tarball: true
-        globs:
-          - NO_MATCH_GLOB
-  - task: package-php-buildpack
-    file: pipeline-tasks/package-cached-php-buildpack.yml
-    input_mapping:
-      buildpack-release: php-buildpack
-  - put: mirror
-    params:
-      sub_dir: buildpack
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification-output/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
-- name: package-python-buildpack
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: python-buildpack
-      trigger: true
+        alert_type: success
+        mode: concise
+        message_file: notification-output/message.txt
+    on_failure:
+      put: notify
       params:
-        include_source_tarball: true
-        globs:
-          - NO_MATCH_GLOB
-  - task: package-python-buildpack
-    file: pipeline-tasks/package-cached-buildpack.yml
-    input_mapping:
-      buildpack-release: python-buildpack
-  - put: mirror
-    params:
-      sub_dir: buildpack
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification-output/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
-- name: package-r-buildpack
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: r-buildpack
-      trigger: true
+        alert_type: failed
+        mode: normal
+  - name: package-nginx-buildpack
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: nginx-buildpack
+            trigger: true
+            params:
+              include_source_tarball: true
+              globs:
+                - NO_MATCH_GLOB
+          - get: nginx-buildpack-bosh-repo
+      - task: package-nginx-buildpack
+        file: pipeline-tasks/package-cached-buildpack.yml
+        input_mapping:
+          buildpack-release: nginx-buildpack
+      - task: release-nginx-buildpack
+        file: pipeline-tasks/create-buildpack-release.yml
+        input_mapping:
+          buildpack-release: nginx-buildpack
+          buildpack-bosh-repository: nginx-buildpack-bosh-repo
+          cached-buildpack: buildpack
+        params:
+          BLOB_PATH: nginx-buildpack
+      - put: mirror-buildpack
+        params:
+          sub_dir: buildpack
+      - put: mirror-bosh-release
+        params:
+          sub_dir: bosh-release
+    on_success:
+      put: notify
       params:
-        include_source_tarball: true
-        globs:
-          - NO_MATCH_GLOB
-  - task: package-r-buildpack
-    file: pipeline-tasks/package-cached-buildpack.yml
-    input_mapping:
-      buildpack-release: r-buildpack
-  - put: mirror
-    params:
-      sub_dir: buildpack
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification-output/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
-- name: package-ruby-buildpack
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: ruby-buildpack
-      trigger: true
+        alert_type: success
+        mode: concise
+        message_file: notification-output/message.txt
+    on_failure:
+      put: notify
       params:
-        include_source_tarball: true
-        globs:
-          - NO_MATCH_GLOB
-  - task: package-ruby-buildpack
-    file: pipeline-tasks/package-cached-buildpack.yml
-    input_mapping:
-      buildpack-release: ruby-buildpack
-  - put: mirror
-    params:
-      sub_dir: buildpack
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification-output/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
-- name: package-staticfile-buildpack
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: staticfile-buildpack
-      trigger: true
+        alert_type: failed
+        mode: normal
+  - name: package-nodejs-buildpack
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: nodejs-buildpack
+            trigger: true
+            params:
+              include_source_tarball: true
+              globs:
+                - NO_MATCH_GLOB
+          - get: nodejs-buildpack-bosh-repo
+      - task: package-nodejs-buildpack
+        file: pipeline-tasks/package-cached-buildpack.yml
+        input_mapping:
+          buildpack-release: nodejs-buildpack
+      - task: release-nodejs-buildpack
+        file: pipeline-tasks/create-buildpack-release.yml
+        input_mapping:
+          buildpack-release: nodejs-buildpack
+          buildpack-bosh-repository: nodejs-buildpack-bosh-repo
+          cached-buildpack: buildpack
+        params:
+          BLOB_PATH: nodejs-buildpack
+      - put: mirror-buildpack
+        params:
+          sub_dir: buildpack
+      - put: mirror-bosh-release
+        params:
+          sub_dir: bosh-release
+    on_success:
+      put: notify
       params:
-        include_source_tarball: true
-        globs:
-          - NO_MATCH_GLOB
-  - task: package-staticfile-buildpack
-    file: pipeline-tasks/package-cached-buildpack.yml
-    input_mapping:
-      buildpack-release: staticfile-buildpack
-  - put: mirror
-    params:
-      sub_dir: buildpack
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification-output/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
+        alert_type: success
+        mode: concise
+        message_file: notification-output/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: normal
+  - name: package-php-buildpack
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: php-buildpack
+            trigger: true
+            params:
+              include_source_tarball: true
+              globs:
+                - NO_MATCH_GLOB
+          - get: php-buildpack-bosh-repo
+      - task: package-php-buildpack
+        file: pipeline-tasks/package-cached-php-buildpack.yml
+        input_mapping:
+          buildpack-release: php-buildpack
+      - task: release-php-buildpack
+        file: pipeline-tasks/create-buildpack-release.yml
+        input_mapping:
+          buildpack-release: php-buildpack
+          buildpack-bosh-repository: php-buildpack-bosh-repo
+          cached-buildpack: buildpack
+        params:
+          BLOB_PATH: php-buildpack
+      - put: mirror-buildpack
+        params:
+          sub_dir: buildpack
+      - put: mirror-bosh-release
+        params:
+          sub_dir: bosh-release
+    on_success:
+      put: notify
+      params:
+        alert_type: success
+        mode: concise
+        message_file: notification-output/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: normal
+  - name: package-python-buildpack
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: python-buildpack
+            trigger: true
+            params:
+              include_source_tarball: true
+              globs:
+                - NO_MATCH_GLOB
+          - get: python-buildpack-bosh-repo
+      - task: package-python-buildpack
+        file: pipeline-tasks/package-cached-buildpack.yml
+        input_mapping:
+          buildpack-release: python-buildpack
+      - task: release-python-buildpack
+        file: pipeline-tasks/create-buildpack-release.yml
+        input_mapping:
+          buildpack-release: python-buildpack
+          buildpack-bosh-repository: python-buildpack-bosh-repo
+          cached-buildpack: buildpack
+        params:
+          BLOB_PATH: python-buildpack
+      - put: mirror-buildpack
+        params:
+          sub_dir: buildpack
+      - put: mirror-bosh-release
+        params:
+          sub_dir: bosh-release
+    on_success:
+      put: notify
+      params:
+        alert_type: success
+        mode: concise
+        message_file: notification-output/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: normal
+  - name: package-r-buildpack
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: r-buildpack
+            trigger: true
+            params:
+              include_source_tarball: true
+              globs:
+                - NO_MATCH_GLOB
+          - get: r-buildpack-bosh-repo
+      - task: package-r-buildpack
+        file: pipeline-tasks/package-cached-buildpack.yml
+        input_mapping:
+          buildpack-release: r-buildpack
+      - task: release-r-buildpack
+        file: pipeline-tasks/create-buildpack-release.yml
+        input_mapping:
+          buildpack-release: r-buildpack
+          buildpack-bosh-repository: r-buildpack-bosh-repo
+          cached-buildpack: buildpack
+        params:
+          BLOB_PATH: r-buildpack
+      - put: mirror-buildpack
+        params:
+          sub_dir: buildpack
+      - put: mirror-bosh-release
+        params:
+          sub_dir: bosh-release
+    on_success:
+      put: notify
+      params:
+        alert_type: success
+        mode: concise
+        message_file: notification-output/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: normal
+  - name: package-ruby-buildpack
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: ruby-buildpack
+            trigger: true
+            params:
+              include_source_tarball: true
+              globs:
+                - NO_MATCH_GLOB
+          - get: ruby-buildpack-bosh-repo
+      - task: package-ruby-buildpack
+        file: pipeline-tasks/package-cached-buildpack.yml
+        input_mapping:
+          buildpack-release: ruby-buildpack
+      - task: release-ruby-buildpack
+        file: pipeline-tasks/create-buildpack-release.yml
+        input_mapping:
+          buildpack-release: ruby-buildpack
+          buildpack-bosh-repository: ruby-buildpack-bosh-repo
+          cached-buildpack: buildpack
+        params:
+          BLOB_PATH: ruby-buildpack
+      - put: mirror-buildpack
+        params:
+          sub_dir: buildpack
+      - put: mirror-bosh-release
+        params:
+          sub_dir: bosh-release
+    on_success:
+      put: notify
+      params:
+        alert_type: success
+        mode: concise
+        message_file: notification-output/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: normal
+  - name: package-staticfile-buildpack
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: staticfile-buildpack
+            trigger: true
+            params:
+              include_source_tarball: true
+              globs:
+                - NO_MATCH_GLOB
+          - get: staticfile-buildpack-bosh-repo
+      - task: package-staticfile-buildpack
+        file: pipeline-tasks/package-cached-buildpack.yml
+        input_mapping:
+          buildpack-release: staticfile-buildpack
+      - task: release-staticfile-buildpack
+        file: pipeline-tasks/create-buildpack-release.yml
+        input_mapping:
+          buildpack-release: staticfile-buildpack
+          buildpack-bosh-repository: staticfile-buildpack-bosh-repo
+          cached-buildpack: buildpack
+        params:
+          BLOB_PATH: staticfile-buildpack
+      - put: mirror-buildpack
+        params:
+          sub_dir: buildpack
+      - put: mirror-bosh-release
+        params:
+          sub_dir: bosh-release
+    on_success:
+      put: notify
+      params:
+        alert_type: success
+        mode: concise
+        message_file: notification-output/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: normal
