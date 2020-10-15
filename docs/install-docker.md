@@ -1,16 +1,15 @@
 # Installing Docker
 
-##  Pre-requisite
+## Pre-requisite (required on BW only)
 
-To not fill up the root partition we will symlink dockers `/var/lib/docker` to
-our `/data` mount.
+To not fill up the root partition we will symlink dockers `/var/lib/docker` to our `/data` mount.
 
 ```bash
 cd /var/lib
 sudo ln -sf /data/docker .
 ```
 
-###  Install required repositories and packages
+### Install required repositories and packages
 
 ```bash
 sudo apt-get update

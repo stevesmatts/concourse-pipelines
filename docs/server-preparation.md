@@ -1,7 +1,28 @@
 # Preparing the Server
 
-The server needs to be an Ubuntu server with a `/data` partition for storing the
-mirrored artifacts.
+The server needs to be an Ubuntu server with a `/data` partition for storing the mirrored artifacts.
+
+## User
+
+| Environment | User |
+| ----------- | ---- |
+| BW | joe |
+| AVA | concourse |
+| Local |whatever you want |
+
+As the correct user running concourse and the pipelines, run the following to prepare the user for running the pipelines
+
+```bash
+cd ~
+mkdir -p .ssh
+chmod 700 .ssh
+cd .ssh
+ssh-keygen -t rsa -b 4096 -C "$USER"
+cat id_rsa.pub >> authorized_keys
+chmod 640 authorized_keys
+```
+
+Note: The `cat` of the id_rsa_pub is required for the rsync tasks running inside the pipelines to be able to copy the artifacts locally.
 
 ## Data directory
 
@@ -16,18 +37,6 @@ sudo mkdir -p /data/repo
 sudo chown $USER:$USER /data/repo
 sudo mkdir -p /data/scripts
 sudo chown $USER:$USER /data/scripts
-```
-
-## User
-
-Run the following to prepare our user for running the pipelines
-
-```bash
-cd ~
-mkdir -p .ssh
-chmod 700 .ssh
-cd .ssh
-ssh-keygen -t rsa -b 4096 -C "$USER"
 ```
 
 ## Maintenance Cronjobs
