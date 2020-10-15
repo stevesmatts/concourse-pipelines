@@ -56,12 +56,12 @@ resources:
     disabled: ((slack_disabled))
 
 groups:
-- name: Releases
+- name: releases
   jobs:
   - mirror-routing-release
   - mirror-bpm-release
   - mirror-dns-release
-- name: Stemcells
+- name: stemcells
   jobs:
   - mirror-stemcell
   - mirror-stemcell-lite

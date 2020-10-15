@@ -98,11 +98,11 @@ resources:
     disabled: ((slack_disabled))
 
 groups:
-- name: Director
+- name: director
   jobs:
   - mirror-bosh-releases
   - mirror-bosh-lite-releases
-- name: Tools
+- name: tools
   jobs:
   - mirror-cli
   - mirror-credhub
