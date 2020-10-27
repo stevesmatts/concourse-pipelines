@@ -1,100 +1,101 @@
 ---
 resource_types:
-- name: slack-notifier
-  type: docker-image
-  source:
-    repository: mockersf/concourse-slack-notifier
-- name: rsync
-  type: docker-image
-  source:
-    repository: trecnoc/rsync-resource
+  - name: slack-notifier
+    type: docker-image
+    source:
+      repository: mockersf/concourse-slack-notifier
+  - name: rsync
+    type: docker-image
+    source:
+      repository: trecnoc/rsync-resource
 
 resources:
-- name: pipeline-tasks
-  type: git
-  source:
-    uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
-    branch: master
-- name: logsearch-deployment
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry-community/logsearch-boshrelease.git
-    tag_filter: v*
-- name: mirror
-  type: rsync
-  source:
-    server: ((rsync_server))
-    username: ((rsync_user))
-    private_key: ((rsync_key))
-    base_dir: /data/repo/bosh/release
-- name: notify
-  type: slack-notifier
-  source:
-    url: ((slack_hook))
-    disabled: ((slack_disabled))
+  - name: pipeline-tasks
+    type: git
+    source:
+      uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
+      branch: master
+  - name: logsearch-deployment
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry-community/logsearch-boshrelease.git
+      tag_filter: v*
+  - name: mirror
+    type: rsync
+    source:
+      server: ((rsync_server))
+      username: ((rsync_user))
+      private_key: ((rsync_key))
+      base_dir: /data/repo/bosh/release
+  - name: notify
+    type: slack-notifier
+    source:
+      url: ((slack_hook))
+      disabled: ((slack_disabled))
 
 jobs:
-- name: mirror-logsearch-releases
-  build_log_retention:
-    days: 7
-    minimum_succeeded_builds: 1
-  plan:
-  - in_parallel:
-    - get: pipeline-tasks
-    - get: logsearch-deployment
-      trigger: true
-  - task: generate-manifest
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: {repository: starkandwayne/concourse}
-      inputs:
-      - name: logsearch-deployment
-      outputs:
-      - name: manifest
-      run:
-        path: /bin/bash
-        args:
-        - -c
-        - |
-          set -e
-          set -o pipefail
+  - name: mirror-logsearch-releases
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: logsearch-deployment
+            trigger: true
+      - task: generate-manifest
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: starkandwayne/concourse
+          inputs:
+            - name: logsearch-deployment
+          outputs:
+            - name: manifest
+          run:
+            path: /bin/bash
+            args:
+              - -c
+              - |
+                set -e
+                set -o pipefail
 
-          printf "Generating manifest for Logsearch Bosh deployment version %s\n" $(cat logsearch-deployment/.git/ref)
-          printf "Excluding BPM and Routing releases"
+                printf "Generating manifest for Logsearch Bosh deployment version %s\n" $(cat logsearch-deployment/.git/ref)
+                printf "Excluding BPM and Routing releases"
 
-          cat << EOF > remove-unnecessary-releases.yml
-          ---
-          - type: remove
-            path: /releases/name=bpm?
-          - type: remove
-            path: /releases/name=routing?
-          EOF
+                cat << EOF > remove-unnecessary-releases.yml
+                ---
+                - type: remove
+                  path: /releases/name=bpm?
+                - type: remove
+                  path: /releases/name=routing?
+                EOF
 
-          bosh int logsearch-deployment/deployment/logsearch-deployment.yml \
-            -o logsearch-deployment/deployment/operations/cloudfoundry.yml \
-            -o remove-unnecessary-releases.yml > manifest/manifest.yml
-  - task: download-releases
-    file: pipeline-tasks/download-releases-from-manifest.yml
-  - put: mirror
-    params:
-      sub_dir: releases
-  - task: generate-notification
-    file: pipeline-tasks/generate-mirrored-notification.yml
-    input_mapping:
-      content-input: logsearch-deployment
-    params:
-      INPUT_TYPE: generic
-      LABEL: "logsearch deployment"
-  on_success:
-    put: notify
-    params:
-      alert_type: success
-      mode: concise
-      message_file: notification/message.txt
-  on_failure:
-    put: notify
-    params:
-      alert_type: failed
-      mode: normal
+                bosh int logsearch-deployment/deployment/logsearch-deployment.yml \
+                  -o logsearch-deployment/deployment/operations/cloudfoundry.yml \
+                  -o remove-unnecessary-releases.yml > manifest/manifest.yml
+      - task: download-releases
+        file: pipeline-tasks/download-releases-from-manifest.yml
+      - put: mirror
+        params:
+          sub_dir: releases
+      - task: generate-notification
+        file: pipeline-tasks/generate-mirrored-notification.yml
+        input_mapping:
+          content-input: logsearch-deployment
+        params:
+          INPUT_TYPE: generic
+          LABEL: "logsearch deployment"
+    on_success:
+      put: notify
+      params:
+        alert_type: success
+        mode: concise
+        message_file: notification/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: normal
