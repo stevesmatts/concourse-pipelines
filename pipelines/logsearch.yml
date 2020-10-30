@@ -27,12 +27,6 @@ resources:
       tag_filter: v*
       username: ((github_access_token))
       password: x-oauth-basic
-  - name: logsearch-plugins-release
-    type: github-release
-    source:
-      owner: trecnoc
-      repository: logsearch-plugins-release
-      access_token: ((github_access_token))
   - name: mirror
     type: rsync
     source:
@@ -132,7 +126,7 @@ jobs:
             - name: logsearch-plugins-repo
           outputs:
             - name: release
-            - name: info
+            - name: notification
           run:
             path: /bin/bash
             args:
@@ -152,18 +146,9 @@ jobs:
 
                 popd >/dev/null
 
-                echo v${version} > info/release_tag.txt
-
-                cat << EOF > info/notification.txt
+                cat << EOF > notification/message.txt
                 Successfully built and mirrored version ${version} of the logsearch-plugins bosh release
                 EOF
-      - put: logsearch-plugins-release
-        params:
-          name: info/release_tag.txt
-          tag: info/release_tag.txt
-          body: logsearch-plugins-repo/release-notes.md
-          globs:
-            - release/logsearch-plugins-release-*.tgz
       - put: mirror
         params:
           sub_dir: release
@@ -172,7 +157,7 @@ jobs:
       params:
         alert_type: success
         mode: concise
-        message_file: info/notification.txt
+        message_file: notification/message.txt
     on_failure:
       put: notify
       params:
