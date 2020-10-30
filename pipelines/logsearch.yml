@@ -20,6 +20,19 @@ resources:
     source:
       uri: https://github.com/cloudfoundry-community/logsearch-boshrelease.git
       tag_filter: v*
+  - name: logsearch-plugins-repo
+    type: git
+    source:
+      uri: https://github.com/trecnoc/logsearch-plugins-release.git
+      tag_filter: v*
+      username: ((github_access_token))
+      password: x-oauth-basic
+  - name: logsearch-plugins-release
+    type: github-release
+    source:
+      owner: trecnoc
+      repository: logsearch-plugins-release
+      access_token: ((github_access_token))
   - name: mirror
     type: rsync
     source:
@@ -94,6 +107,72 @@ jobs:
         alert_type: success
         mode: concise
         message_file: notification/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: normal
+  - name: build-logsearch-plugins-release
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: logsearch-plugins-repo
+            trigger: true
+      - task: build-release
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: starkandwayne/concourse
+          inputs:
+            - name: logsearch-plugins-repo
+          outputs:
+            - name: release
+            - name: info
+          run:
+            path: /bin/bash
+            args:
+              - -c
+              - |
+                set -e
+                set -o pipefail
+
+                version=$(cat logsearch-plugins-repo/version)
+
+                printf "Building logsearch-plugins-release for version v%s\n" ${version}
+
+                pushd logsearch-plugins-repo >/dev/null
+
+                bosh create-release --final --version="${version}" --tarball ../release/logsearch-plugins-release-${version}.tgz
+                cp release-notes.md ../release/logsearch-plugins-release-${version}.md
+
+                popd >/dev/null
+
+                echo v${version} > info/release_tag.txt
+
+                cat << EOF > info/notification.txt
+                Successfully built and mirrored version ${version} of the logsearch-plugins bosh release
+                EOF
+      - put: logsearch-plugins-release
+        params:
+          name: info/release_tag.txt
+          tag: info/release_tag.txt
+          body: logsearch-plugins-repo/release-notes.md
+          globs:
+            - release/logsearch-plugins-release-*.tgz
+      - put: mirror
+        params:
+          sub_dir: release
+    on_success:
+      put: notify
+      params:
+        alert_type: success
+        mode: concise
+        message_file: info/notification.txt
     on_failure:
       put: notify
       params:
