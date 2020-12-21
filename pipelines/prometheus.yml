@@ -1,0 +1,95 @@
+---
+resource_types:
+  - name: slack-notifier
+    type: docker-image
+    source:
+      repository: mockersf/concourse-slack-notifier
+  - name: rsync
+    type: docker-image
+    source:
+      repository: trecnoc/rsync-resource
+resources:
+  - name: pipeline-tasks
+    type: git
+    source:
+      uri: https://github.com/trecnoc/concourse-pipelines-tasks.git
+      branch: master
+  - name: prometheus-boshrelease
+    type: git
+    source:
+      uri: https://github.com/bosh-prometheus/prometheus-boshrelease.git
+      tag_filter: v*
+  - name: mirror
+    type: rsync
+    source:
+      server: ((rsync_server))
+      username: ((rsync_user))
+      private_key: ((rsync_key))
+      base_dir: /data/repo/bosh/release
+  - name: notify
+    type: slack-notifier
+    source:
+      url: ((slack_hook))
+      disabled: ((slack_disabled))
+jobs:
+  - name: mirror-prometheus-releases
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: prometheus-boshrelease
+            trigger: true
+      - task: generate-manifest
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source: { repository: starkandwayne/concourse }
+          inputs:
+            - name: prometheus-boshrelease
+          outputs:
+            - name: manifest
+          run:
+            path: /bin/bash
+            args:
+              - -c
+              - |
+                set -e
+                set -o pipefail
+
+                printf "Generating manifest for Prometheus deployment version %s\n" $(cat prometheus-boshrelease/.git/ref)
+                printf "Excluding common releases"
+
+                cat << EOF > remove-not-required.yml
+                ---
+                - type: remove
+                  path: /releases/name=postgres?
+                EOF
+
+                bosh int prometheus-boshrelease/manifests/prometheus.yml \
+                  -o remove-not-required.yml >manifest/manifest.yml
+      - task: download-releases
+        file: pipeline-tasks/download-releases-from-manifest.yml
+      - put: mirror
+        params:
+          sub_dir: releases
+      - task: generate-notification
+        file: pipeline-tasks/generate-mirrored-notification.yml
+        input_mapping:
+          content-input: prometheus-boshrelease
+        params:
+          INPUT_TYPE: generic
+          LABEL: "prometheus bosh deployment"
+    on_success:
+      put: notify
+      params:
+        alert_type: success
+        mode: concise
+        message_file: notification/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: normal
