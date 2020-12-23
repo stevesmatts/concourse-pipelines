@@ -4,6 +4,7 @@ set -e
 set -o pipefail
 
 CREDENTIAL_FILE=credentials.yml
+DEFAULT_PARAMETERS=default_parameters.yml
 
 if [[ "$#" -eq 1 ]]; then
   TARGET=$1
@@ -22,7 +23,7 @@ configure_pipeline() {
   CONFIG_FILE=$2
 
   printf "Setting pipeline: %s\n" ${NAME}
-  fly -t ${TARGET} set-pipeline -n -p ${NAME} -c ${CONFIG_FILE} --load-vars-from ${CREDENTIAL_FILE}
+  fly -t ${TARGET} set-pipeline -n -p ${NAME} -c ${CONFIG_FILE} --load-vars-from ${DEFAULT_PARAMETERS} --load-vars-from ${CREDENTIAL_FILE}
   fly -t ${TARGET} unpause-pipeline -p ${NAME} >/dev/null
 }
 
@@ -36,6 +37,7 @@ configure_pipeline logsearch pipelines/logsearch.yml
 configure_pipeline mattermost pipelines/mattermost.yml
 configure_pipeline minio pipelines/minio.yml
 configure_pipeline mysql pipelines/mysql.yml
+configure_pipeline postgres-cluster pipelines/postgres-cluster.yml
 configure_pipeline prometheus pipelines/prometheus.yml
 configure_pipeline rabbitmq pipelines/rabbitmq.yml
 configure_pipeline redis pipelines/redis.yml
