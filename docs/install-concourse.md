@@ -62,10 +62,10 @@ volumes:
 
 ## Run Docker Concourse
 
-### From `/data/scripts/concourse-docker` directory:
+### From `/data/scripts/concourse-docker` directory
 
 `docker-compose up -d`
 
-### From any directory:
+### From any directory
 
 `docker-compose -f /data/scripts/concourse-docker/docker-compose.yml up -d`
