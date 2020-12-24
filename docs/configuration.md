@@ -41,15 +41,11 @@ Open the generated file and validate the content. If the content is correct run 
 
 The generated credentials file contains some settings which can be overriden from the default values specified in `default_parameters.yml`.
 
-For instance on the AVA environment we would override the following, in this case the `generate_release_drafts` is quite important:
+For instance on the AVA environment we would override the following:
 
 ```yml
 slack_disabled: true
-generate_release_drafts: true
-concourse_env: avalon
 ```
-
-*In this case on AVA the `generate_release_drafts` is quite important to override to `true` since it is not used to generate actual release artifacts*
 
 ### Login to Concourse and set the Pipelines
 
