@@ -21,15 +21,6 @@ resources:
       tag_filter: v*
       username: ((github_access_token))
       password: x-oauth-basic
-  - name: postgres-cluster-release
-    type: github-release
-    source:
-      owner: trecnoc
-      repository: postgres-cluster-release
-      access_token: ((github_access_token))
-      release: true
-      pre_release: false
-      drafts: ((generate_release_drafts))
   - name: mirror
     type: rsync
     source:
@@ -43,7 +34,7 @@ resources:
       url: ((slack_hook))
       disabled: ((slack_disabled))
 jobs:
-  - name: build-postgres-cluster-release
+  - name: build-and-mirror-postgres-cluster-release
     build_log_retention:
       days: 7
       minimum_succeeded_builds: 1
@@ -64,9 +55,6 @@ jobs:
           outputs:
             - name: release
             - name: notification
-          params:
-            DRAFT_RELEASE: ((generate_release_drafts))
-            CONCOURSE_ENV: ((concourse_env))
           run:
             path: /bin/bash
             args:
@@ -83,70 +71,16 @@ jobs:
                 pushd postgres-cluster-repo >/dev/null
 
                 bosh create-release --final --version="${version}" --tarball ../release/postgres-cluster-release-${version}.tgz
-                cp release-notes.md ../release/release-notes.md
+                cp release-notes.md ../release/postgres-cluster-release-${version}.md
 
                 popd >/dev/null
-
-                release_name_suffix=""
-                if [[ "${DRAFT_RELEASE}" == "true" ]]; then
-                  release_name_suffix="-${CONCOURSE_ENV}"
-                fi               
-
-                cat << EOF > release/name.txt
-                ${tag}${release_name_suffix}
-                EOF
-
-                cat << EOF > release/tag.txt
-                ${tag}
-                EOF
 
                 cat << EOF > notification/message.txt
                 Successfully built version ${version} of the postgres-cluster bosh release
                 EOF
-      - put: postgres-cluster-release
-        params:
-          name: release/name.txt
-          tag: release/tag.txt
-          body: release/release-notes.md
-          globs:
-            - release/*.tgz
-    on_success:
-      put: notify
-      params:
-        alert_type: success
-        mode: concise
-        message_file: notification/message.txt
-    on_failure:
-      put: notify
-      params:
-        alert_type: failed
-        mode: normal
-  - name: mirror-postgres-cluster-release
-    build_log_retention:
-      days: 7
-      minimum_succeeded_builds: 1
-    plan:
-      - in_parallel:
-          - get: pipeline-tasks
-          - get: postgres-cluster-release
-            trigger: true
-      - task: copy-release
-        file: pipeline-tasks/copy-github-release.yml
-        input_mapping:
-          release-input: postgres-cluster-release
-        params:
-          SKIP_VERSION_SUBDIR: true
-          RELEASE_NOTE_PREFIX: "postgres-cluster-release"
       - put: mirror
         params:
-          sub_dir: artifacts
-      - task: generate-notification
-        file: pipeline-tasks/generate-mirrored-notification.yml
-        input_mapping:
-          content-input: postgres-cluster-release
-        params:
-          INPUT_TYPE: generic
-          LABEL: "postgres-cluster bosh release"
+          sub_dir: release
     on_success:
       put: notify
       params:
