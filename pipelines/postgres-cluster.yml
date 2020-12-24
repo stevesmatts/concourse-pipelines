@@ -30,6 +30,15 @@ resources:
       release: true
       pre_release: false
       drafts: ((generate_release_drafts))
+  - name: postgres-cluster-final-release
+    type: github-release
+    source:
+      owner: trecnoc
+      repository: postgres-cluster-release
+      access_token: ((github_access_token))
+      release: true
+      pre_release: false
+      drafts: false
   - name: mirror
     type: rsync
     source:
@@ -128,12 +137,12 @@ jobs:
     plan:
       - in_parallel:
           - get: pipeline-tasks
-          - get: postgres-cluster-release
+          - get: postgres-cluster-final-release
             trigger: true
       - task: copy-release
         file: pipeline-tasks/copy-github-release.yml
         input_mapping:
-          release-input: postgres-cluster-release
+          release-input: postgres-cluster-final-release
         params:
           SKIP_VERSION_SUBDIR: true
           RELEASE_NOTE_PREFIX: "postgres-cluster-release"
@@ -143,7 +152,7 @@ jobs:
       - task: generate-notification
         file: pipeline-tasks/generate-mirrored-notification.yml
         input_mapping:
-          content-input: postgres-cluster-release
+          content-input: postgres-cluster-final-release
         params:
           INPUT_TYPE: generic
           LABEL: "postgres-cluster bosh release"
