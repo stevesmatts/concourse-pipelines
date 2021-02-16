@@ -19,6 +19,12 @@ resources:
     source:
       uri: https://github.com/bosh-prometheus/prometheus-boshrelease.git
       tag_filter: v*
+  - name: promregator
+    type: github-release
+    source:
+      owner: promregator
+      repository: promregator
+      access_token: ((github_access_token))
   - name: mirror
     type: rsync
     source:
@@ -26,6 +32,13 @@ resources:
       username: ((rsync_user))
       private_key: ((rsync_key))
       base_dir: /data/repo/bosh/release
+  - name: promregator-mirror
+    type: rsync
+    source:
+      server: ((rsync_server))
+      username: ((rsync_user))
+      private_key: ((rsync_key))
+      base_dir: /data/repo/promregator
   - name: notify
     type: slack-notifier
     source:
@@ -82,6 +95,46 @@ jobs:
         params:
           INPUT_TYPE: generic
           LABEL: "prometheus bosh deployment"
+    on_success:
+      put: notify
+      params:
+        alert_type: success
+        mode: concise
+        message_file: notification/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: normal
+  - name: mirror-promregator
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: promregator
+            trigger: true
+            params:
+              globs:
+                - "promregator*.jar"
+      - task: copy-release
+        file: pipeline-tasks/copy-github-release.yml
+        input_mapping:
+          release-input: promregator
+        params:
+          SKIP_VERSION_SUBDIR: true
+          RELEASE_NOTE_PREFIX: "promregator"
+      - put: promregator-mirror
+        params:
+          sub_dir: artifacts
+      - task: generate-notification
+        file: pipeline-tasks/generate-mirrored-notification.yml
+        input_mapping:
+          content-input: promregator
+        params:
+          INPUT_TYPE: generic
+          LABEL: "promregator"
     on_success:
       put: notify
       params:
