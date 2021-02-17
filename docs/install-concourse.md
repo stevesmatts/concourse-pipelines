@@ -45,6 +45,12 @@ In the web service update the following 2 environment variables by first making 
 `CONCOURSE_ADD_LOCAL_USER: <user running concourse>:<password from syspass>`
 `CONCOURSE_MAIN_TEAM_LOCAL_USER: <user running concourse>`
 
+### Enable Global resources
+
+In the web service add the following environment variable.
+
+`CONCOURSE_ENABLE_GLOBAL_RESOURCES: "true"`
+
 ### Add a local volume for the Postgres database
 
 Adding a local volume to the Postgres database will allow that data in concourse to persist over `docker-compose -d`.
