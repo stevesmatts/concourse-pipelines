@@ -1,11 +1,11 @@
 ---
 resource_types:
   - name: slack-notifier
-    type: docker-image
+    type: registry-image
     source:
       repository: mockersf/concourse-slack-notifier
   - name: rsync
-    type: docker-image
+    type: registry-image
     source:
       repository: trecnoc/rsync-resource
 
@@ -54,7 +54,7 @@ jobs:
         config:
           platform: linux
           image_resource:
-            type: docker-image
+            type: registry-image
             source:
               repository: starkandwayne/concourse
           inputs:
@@ -119,7 +119,7 @@ jobs:
         config:
           platform: linux
           image_resource:
-            type: docker-image
+            type: registry-image
             source:
               repository: starkandwayne/concourse
           inputs:
