@@ -1,11 +1,11 @@
 ---
 resource_types:
   - name: slack-notifier
-    type: docker-image
+    type: registry-image
     source:
       repository: mockersf/concourse-slack-notifier
   - name: nexus
-    type: docker-image
+    type: registry-image
     source:
       repository: trecnoc/nexus-resource
       tag: latest
@@ -48,7 +48,7 @@ jobs:
         config:
           platform: linux
           image_resource:
-            type: docker-image
+            type: registry-image
             source:
               repository: starkandwayne/concourse
           inputs:
