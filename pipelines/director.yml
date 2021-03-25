@@ -137,13 +137,6 @@ jobs:
           set -o pipefail
 
           printf "Generating manifest for Bosh deployment commit: %s\n" $(cat bosh-deployment/.git/ref)
-          printf "Excluding BPM release"
-
-          cat << EOF > remove-unnecessary-releases.yml
-          ---
-          - type: remove
-            path: /releases/name=bpm?
-          EOF
 
           bosh int bosh-deployment/bosh.yml \
             -o bosh-deployment/vsphere/cpi.yml \
@@ -152,8 +145,7 @@ jobs:
             -o bosh-deployment/uaa.yml \
             -o bosh-deployment/credhub.yml \
             -o bosh-deployment/jumpbox-user.yml \
-            -o bosh-deployment/bbr.yml \
-            -o remove-unnecessary-releases.yml > manifest/manifest.yml
+            -o bosh-deployment/bbr.yml > manifest/manifest.yml
   - task: download-releases
     file: pipeline-tasks/download-releases-from-manifest.yml
   - put: bosh-mirror
