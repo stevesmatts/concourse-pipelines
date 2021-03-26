@@ -27,14 +27,22 @@ resources:
   type: bosh-io-release
   source:
     repository: cloudfoundry/bosh-dns-release
-- name: stemcell
+- name: stemcell-xenial
   type: bosh-io-stemcell
   source:
     name: bosh-vsphere-esxi-ubuntu-xenial-go_agent
-- name: stemcell-lite
+- name: stemcell-lite-xenial
   type: bosh-io-stemcell
   source:
     name: bosh-warden-boshlite-ubuntu-xenial-go_agent
+- name: stemcell-bionic
+  type: bosh-io-stemcell
+  source:
+    name: bosh-vsphere-esxi-ubuntu-bionic-go_agent
+- name: stemcell-lite-bionic
+  type: bosh-io-stemcell
+  source:
+    name: bosh-warden-boshlite-ubuntu-bionic-go_agent    
 - name: release-mirror
   type: rsync
   source:
@@ -63,8 +71,10 @@ groups:
   - mirror-dns-release
 - name: stemcells
   jobs:
-  - mirror-stemcell
-  - mirror-stemcell-lite
+  - mirror-stemcell-xenial
+  - mirror-stemcell-lite-xenial
+  - mirror-stemcell-bionic
+  - mirror-stemcell-lite-bionic
 
 jobs:
 - name: mirror-routing-release
@@ -166,25 +176,25 @@ jobs:
     params:
       alert_type: failed
       mode: normal
-- name: mirror-stemcell
+- name: mirror-stemcell-xenial
   build_log_retention:
     days: 7
     minimum_succeeded_builds: 1
   plan:
   - in_parallel:
     - get: pipeline-tasks
-    - get: stemcell
+    - get: stemcell-xenial
       trigger: true
       params:
         preserve_filename: true
   - put: stemcell-mirror
     params:
-      sub_dir: stemcell
+      sub_dir: stemcell-xenial
       include: "*.tgz"
   - task: generate-notification
     file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
-      content-input: stemcell
+      content-input: stemcell-xenial
     params:
       INPUT_TYPE: bosh_io_stemcell
   on_success:
@@ -198,25 +208,89 @@ jobs:
     params:
       alert_type: failed
       mode: normal
-- name: mirror-stemcell-lite
+- name: mirror-stemcell-lite-xenial
   build_log_retention:
     days: 7
     minimum_succeeded_builds: 1
   plan:
   - in_parallel:
     - get: pipeline-tasks
-    - get: stemcell-lite
+    - get: stemcell-lite-xenial
       trigger: true
       params:
         preserve_filename: true
   - put: stemcell-mirror
     params:
-      sub_dir: stemcell-lite
+      sub_dir: stemcell-lite-xenial
       include: "*.tgz"
   - task: generate-notification
     file: pipeline-tasks/generate-mirrored-notification.yml
     input_mapping:
-      content-input: stemcell-lite
+      content-input: stemcell-lite-xenial
+    params:
+      INPUT_TYPE: bosh_io_stemcell
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-stemcell-bionic
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
+  plan:
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: stemcell-bionic
+      trigger: true
+      params:
+        preserve_filename: true
+  - put: stemcell-mirror
+    params:
+      sub_dir: stemcell-bionic
+      include: "*.tgz"
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: stemcell-bionic
+    params:
+      INPUT_TYPE: bosh_io_stemcell
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: mirror-stemcell-lite-bionic
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
+  plan:
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: stemcell-lite-bionic
+      trigger: true
+      params:
+        preserve_filename: true
+  - put: stemcell-mirror
+    params:
+      sub_dir: stemcell-lite-bionic
+      include: "*.tgz"
+  - task: generate-notification
+    file: pipeline-tasks/generate-mirrored-notification.yml
+    input_mapping:
+      content-input: stemcell-lite-bionic
     params:
       INPUT_TYPE: bosh_io_stemcell
   on_success:
