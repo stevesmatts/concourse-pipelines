@@ -31,6 +31,24 @@ resources:
   type: bosh-io-release
   source:
     repository: bosh-packages/cf-cli-release
+- name: cf-rabbitmq-github-release
+  type: github-release
+  source:
+    owner: pivotal-cf
+    repository: cf-rabbitmq-release
+    access_token: ((github_access_token))
+- name: cf-rabbitmq-broker-github-release
+  type: github-release
+  source:
+    owner: pivotal-cf
+    repository: cf-rabbitmq-multitenant-broker-release
+    access_token: ((github_access_token))
+- name: cf-rabbitmq-smoke-tests-github-release
+  type: github-release
+  source:
+    owner: pivotal-cf
+    repository: cf-rabbitmq-smoke-tests-release
+    access_token: ((github_access_token)) 
 - name: mirror
   type: rsync
   source:
@@ -166,6 +184,105 @@ jobs:
       content-input: cf-cli-release
     params:
       INPUT_TYPE: bosh_io_release
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: build-rabbitmq-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
+  plan:
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: cf-rabbitmq-github-release
+      trigger: true
+      params:
+        include_source_tarball: true
+        globs:
+          - NO_MATCH_GLOB
+  - task: build-release
+    file: pipeline-tasks/create-existing-release.yml
+    input_mapping:
+      github-release-input: cf-rabbitmq-github-release
+    params:
+      RELEASE_NAME: cf-rabbitmq-release-custom
+  - put: mirror
+    params:
+      sub_dir: release
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: build-rabbitmq-broker-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
+  plan:
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: cf-rabbitmq-broker-github-release
+      trigger: true
+      params:
+        include_source_tarball: true
+        globs:
+          - NO_MATCH_GLOB
+  - task: build-release
+    file: pipeline-tasks/create-existing-release.yml
+    input_mapping:
+      github-release-input: cf-rabbitmq-broker-github-release
+    params:
+      RELEASE_NAME: cf-rabbitmq-multitenant-broker-release-custom
+  - put: mirror
+    params:
+      sub_dir: release
+  on_success:
+    put: notify
+    params:
+      alert_type: success
+      mode: concise
+      message_file: notification/message.txt
+  on_failure:
+    put: notify
+    params:
+      alert_type: failed
+      mode: normal
+- name: build-rabbitmq-smoke-tests-release
+  build_log_retention:
+    days: 7
+    minimum_succeeded_builds: 1
+  plan:
+  - in_parallel:
+    - get: pipeline-tasks
+    - get: cf-rabbitmq-smoke-tests-github-release
+      trigger: true
+      params:
+        include_source_tarball: true
+        globs:
+          - NO_MATCH_GLOB
+  - task: build-release
+    file: pipeline-tasks/create-existing-release.yml
+    input_mapping:
+      github-release-input: cf-rabbitmq-smoke-tests-github-release
+    params:
+      RELEASE_NAME: cf-rabbitmq-smoke-tests-release-custom
+  - put: mirror
+    params:
+      sub_dir: release
   on_success:
     put: notify
     params:
