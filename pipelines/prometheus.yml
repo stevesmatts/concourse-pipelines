@@ -22,9 +22,10 @@ resources:
   - name: promregator
     type: github-release
     source:
-      owner: promregator
+      owner: trecnoc
       repository: promregator
       access_token: ((github_access_token))
+      pre_release: true
   - name: mirror
     type: rsync
     source:
