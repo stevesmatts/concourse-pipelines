@@ -26,6 +26,10 @@ resources:
       repository: promregator
       access_token: ((github_access_token))
       pre_release: true
+  - name: cron-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry-community/cron-boshrelease
   - name: mirror
     type: rsync
     source:
@@ -136,6 +140,39 @@ jobs:
         params:
           INPUT_TYPE: generic
           LABEL: "promregator"
+    on_success:
+      put: notify
+      params:
+        alert_type: success
+        mode: concise
+        message_file: notification/message.txt
+    on_failure:
+      put: notify
+      params:
+        alert_type: failed
+        mode: normal
+  - name: mirror-cron-release
+    build_log_retention:
+      days: 7
+      minimum_succeeded_builds: 1
+    plan:
+      - in_parallel:
+          - get: pipeline-tasks
+          - get: cron-release
+            trigger: true
+      - task: rename-release
+        file: pipeline-tasks/rename-bosh-io-release.yml
+        input_mapping:
+          release-input: cron-release
+      - put: release-mirror
+        params:
+          sub_dir: release-output
+      - task: generate-notification
+        file: pipeline-tasks/generate-mirrored-notification.yml
+        input_mapping:
+          content-input: cron-release
+        params:
+          INPUT_TYPE: bosh_io_release
     on_success:
       put: notify
       params:
