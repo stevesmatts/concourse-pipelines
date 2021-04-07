@@ -164,7 +164,7 @@ jobs:
         file: pipeline-tasks/rename-bosh-io-release.yml
         input_mapping:
           release-input: cron-release
-      - put: release-mirror
+      - put: mirror
         params:
           sub_dir: release-output
       - task: generate-notification
