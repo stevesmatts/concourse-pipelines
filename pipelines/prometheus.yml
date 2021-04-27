@@ -22,10 +22,10 @@ resources:
   - name: promregator
     type: github-release
     source:
-      owner: trecnoc
+      owner: promregator
       repository: promregator
       access_token: ((github_access_token))
-      pre_release: true
+      pre_release: false
   - name: cron-release
     type: bosh-io-release
     source:
