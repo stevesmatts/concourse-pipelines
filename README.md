@@ -1,3 +1,5 @@
+# *Repository archived and moved to our Bitbucket project*
+
 # Concourse Pipelines
 
 Repository with our Concourse pipelines.
